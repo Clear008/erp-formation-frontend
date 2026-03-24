@@ -17,6 +17,15 @@ import ActionsList from './pages/actions/ActionsList';
 import ActionCreateWizard from './pages/actions/ActionCreateWizard';
 import ActionDetails from './pages/actions/ActionDetails';
 
+import FacturesList from './pages/factures/FacturesList';
+import FactureDetails from './pages/factures/FactureDetails';
+import ChequesPage from './pages/encaissements/ChequesPage';
+import FactureCreateWizard from './pages/factures/FactureCreateWizard';
+
+import FormateursList from './pages/formateurs/FormateursList';
+import FormateurDetails from './pages/formateurs/FormateurDetails';
+import PlanningPage from './pages/planning/PlanningPage';
+
 export default function App() {
   return (
     <>
@@ -52,6 +61,13 @@ export default function App() {
               <Route path="/actions" element={<ActionsList />} />
               <Route path="/actions/new" element={<ActionCreateWizard />} />
               <Route path="/actions/:id" element={<ActionDetails />} />
+              <Route path="/formateurs" element={<FormateursList />} />
+              <Route path="/formateurs/:id" element={<FormateurDetails />} />
+              <Route path="/planning" element={<PlanningPage />} />
+              <Route path="/factures" element={<FacturesList />} />
+              <Route path="/factures/:id" element={<FactureDetails />} />
+              <Route path="/cheques" element={<ChequesPage />} />
+              <Route path="/factures/nouvelle" element={<FactureCreateWizard />} />
 
             {/* Route ADMIN uniquement */}
             <Route

@@ -89,6 +89,50 @@ export default function Sidebar() {
                     }
                 />
 
+
+                <NavItem
+                    to="/formateurs"
+                    label="Formateurs"
+                    icon={
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                  d="M17 20h5v-1a4 4 0 00-3-3.87M9 20H4v-1a4 4 0 013-3.87m10-4.13a4 4 0 11-8 0 4 4 0 018 0zM3 7a4 4 0 118 0 4 4 0 01-8 0z"/>
+                        </svg>
+                    }
+                />
+
+                <NavItem
+                    to="/planning"
+                    label="Planning"
+                    icon={
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7H3v12a2 2 0 002 2z"/>
+                        </svg>
+                    }
+                />
+
+                <NavItem
+                    to="/factures"
+                    label="Factures"
+                    icon={
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z"/>
+                        </svg>
+                    }
+                />
+
+                <NavItem
+                    to="/cheques"
+                    label="Chèques"
+                    icon={
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                  d="M17 9V7a4 4 0 10-8 0v2M5 9h14l-1 10H6L5 9z"/>
+                        </svg>
+                    }
+                />
                 {/* ============ SECTION ADMIN ============ */}
                 {user && isAdmin(user.role) && (
                     <>
