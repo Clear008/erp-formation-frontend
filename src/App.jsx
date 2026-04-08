@@ -21,6 +21,7 @@ import FacturesList from './pages/factures/FacturesList';
 import FactureDetails from './pages/factures/FactureDetails';
 import ChequesPage from './pages/encaissements/ChequesPage';
 import FactureCreateWizard from './pages/factures/FactureCreateWizard';
+import ChequeCreateWizard from './pages/cheques/ChequeCreateWizard';
 
 import FormateursList from './pages/formateurs/FormateursList';
 import FormateurDetails from './pages/formateurs/FormateurDetails';
@@ -68,6 +69,7 @@ export default function App() {
               <Route path="/factures/:id" element={<FactureDetails />} />
               <Route path="/cheques" element={<ChequesPage />} />
               <Route path="/factures/nouvelle" element={<FactureCreateWizard />} />
+              <Route path="/cheques/nouveau" element={<ChequeCreateWizard />} />
 
             {/* Route ADMIN uniquement */}
             <Route

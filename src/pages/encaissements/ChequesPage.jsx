@@ -1,6 +1,7 @@
 // src/pages/encaissements/ChequesPage.jsx
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getCheques, createCheque, changeChequeStatus } from '../../api/chequeApi';
 import { CHEQUE_STATUS, CHEQUE_STATUS_OPTIONS } from '../../utils/financeConstants.js';
@@ -60,6 +61,13 @@ export default function ChequesPage() {
                     <h1 className="text-2xl font-bold text-white">Suivi des chèques</h1>
                     <p className="text-sm text-gray-400 mt-1">{cheques.length} chèque(s)</p>
                 </div>
+
+                <Link
+                    to="/cheques/nouveau"
+                    className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 transition"
+                >
+                    + Créer un chèque
+                </Link>
             </div>
 
             {/* Stats */}
