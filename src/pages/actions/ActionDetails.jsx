@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 import { getAction, changeActionStatus, updateActionChecklist } from '../../api/actionApi';
 import { useAuth } from '../../auth/AuthContext';
 import { ACTION_STATUS, STATUS_TRANSITIONS, WORKFLOW_STEPS, RESTRICTED_ROLES } from '../../utils/constants';
+import DocumentsTab from '../documents/components/DocumentsTab';
+
 
 function StatusBadge({ statut }) {
     const config = ACTION_STATUS[statut] || { label: statut, color: 'bg-gray-700 text-gray-300' };
@@ -77,7 +79,12 @@ export default function ActionDetails() {
         }
     };
 
-    const TABS = ['Infos', 'Checklist', 'Historique'];
+    const TABS = [
+        { key: 'Infos', label: 'Infos' },
+        { key: 'Checklist', label: 'Checklist' },
+        { key: 'Historique', label: 'Historique' },
+        { key: 'Documents', label: 'Documents' },
+    ];
 
     return (
         <div>
@@ -158,15 +165,15 @@ export default function ActionDetails() {
                 <nav className="flex gap-6">
                     {TABS.map((tab) => (
                         <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key)}
                             className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
-                                activeTab === tab
+                                activeTab === tab.key
                                     ? 'border-indigo-500 text-indigo-400'
                                     : 'border-transparent text-gray-400 hover:text-gray-300'
                             }`}
                         >
-                            {tab}
+                            {tab.label}
                         </button>
                     ))}
                 </nav>
@@ -284,6 +291,14 @@ export default function ActionDetails() {
                             ))}
                         </div>
                     )}
+                </div>
+            )}
+            {activeTab === 'Documents' && (
+                <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+                    <DocumentsTab
+                        entityType="ACTION"
+                        entityId={action.id}
+                    />
                 </div>
             )}
 

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import DocumentsTab from '../documents/components/DocumentsTab';
 import {
     getClient, updateClient, toggleClientStatus,
     getContacts, createContact, updateContact, deleteContact
