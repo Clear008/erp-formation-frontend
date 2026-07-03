@@ -97,6 +97,7 @@ export default function ClientDetails() {
     const tabs = [
         { key: 'infos', label: 'Informations' },
         { key: 'contacts', label: `Contacts (${contacts.length})` },
+        { key: 'documents', label: 'Documents' },
     ];
 
     return (
@@ -234,6 +235,7 @@ export default function ClientDetails() {
                         </div>
                     )}
 
+
                     {/* Create Contact Modal */}
                     {showContactModal && (
                         <ContactFormModal
@@ -252,6 +254,12 @@ export default function ClientDetails() {
                             onClose={() => setEditingContact(null)}
                         />
                     )}
+                </div>
+            )}
+            {/* Tab: Documents */}
+            {activeTab === 'Documents' && (
+                <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+                    <DocumentsTab entityType="CLIENT" entityId={client.id} />
                 </div>
             )}
         </div>

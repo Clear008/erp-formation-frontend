@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import FactureEncaissementsTab from './components/FactureEncaissementsTab';
 import { getFacture, changeFactureStatus, getEncaissements } from '../../api/factureApi';
 import { FACTURE_STATUS, FACTURE_STATUS_OPTIONS } from '../../utils/financeConstants';
+import DocumentsTab from '../documents/components/DocumentsTab';
 
 
 function StatusBadge({ statut }) {
@@ -64,6 +65,7 @@ export default function FactureDetails() {
     const tabs = [
         { key: 'infos', label: 'Détails' },
         { key: 'encaissements', label: `Encaissements (${encaissements.length})` },
+        { key: 'documents', label: 'Documents' },
     ];
 
     const isPaid = facture.statut === 'PAYEE';
@@ -166,6 +168,14 @@ export default function FactureDetails() {
                     onModalOpened={() => setOpenEncaissementModal(false)}
                 />
             )}
+
+            {/* Tab: Documents */}
+            {activeTab === 'documents' && (
+                <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+                <DocumentsTab entityType="FACTURE" entityId={facture.id} />
+                </div>
+            )}
+
 
             {/* Modal: Changer statut */}
             {showStatusModal && (

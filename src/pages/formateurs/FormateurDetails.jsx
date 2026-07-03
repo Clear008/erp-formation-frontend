@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getFormateur, toggleFormateurStatus, getFormateurSessions } from '../../api/formateurApi';
+import DocumentsTab from '../documents/components/DocumentsTab';
 import { SESSION_STATUS } from '../../utils/sessionConstants';
 
 export default function FormateurDetails() {
@@ -49,6 +50,7 @@ export default function FormateurDetails() {
     const tabs = [
         { key: 'infos', label: 'Informations' },
         { key: 'sessions', label: `Interventions (${sessions.length})` },
+        { key: 'Documents', label: 'Documents' },
     ];
 
     return (
@@ -166,6 +168,13 @@ export default function FormateurDetails() {
                             </table>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Tab: Documents */}
+            {activeTab === 'Documents' && (
+                <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+                    <DocumentsTab entityType="FORMATEUR" entityId={formateur.id} />
                 </div>
             )}
         </div>
