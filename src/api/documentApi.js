@@ -47,7 +47,13 @@ export const countDocumentsByEntity = (entityType, entityId) =>
 export const searchDocuments = (params) =>
     axiosClient.get('/api/documents/search', { params });
 
+// Recherche globale du centre documentaire
+export const searchDocumentsGlobal = (params) =>
+    axiosClient.get('/api/documents/search/global', { params });
 
+// Liste des déposants
+export const getUploaders = () =>
+    axiosClient.get('/api/documents/uploaders');
 
 // Versions
 export const getDocumentVersions = (id) =>
