@@ -43,9 +43,11 @@ export const getDocumentsByEntity = (entityType, entityId) =>
 export const countDocumentsByEntity = (entityType, entityId) =>
     axiosClient.get(`/api/documents/entity/${entityType}/${entityId}/count`);
 
-// Recherche globale
+// Recherche simple
 export const searchDocuments = (params) =>
     axiosClient.get('/api/documents/search', { params });
+
+
 
 // Versions
 export const getDocumentVersions = (id) =>

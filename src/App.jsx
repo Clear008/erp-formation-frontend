@@ -27,6 +27,8 @@ import FormateursList from './pages/formateurs/FormateursList';
 import FormateurDetails from './pages/formateurs/FormateurDetails';
 import PlanningPage from './pages/planning/PlanningPage';
 
+import DocumentsCenter from './pages/documents/DocumentsCenter';
+
 export default function App() {
   return (
     <>
@@ -70,6 +72,7 @@ export default function App() {
               <Route path="/cheques" element={<ChequesPage />} />
               <Route path="/factures/nouvelle" element={<FactureCreateWizard />} />
               <Route path="/cheques/nouveau" element={<ChequeCreateWizard />} />
+              <Route path="/documents" element={<DocumentsCenter />} />
 
             {/* Route ADMIN uniquement */}
             <Route

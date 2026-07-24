@@ -133,6 +133,27 @@ export default function Sidebar() {
                         </svg>
                     }
                 />
+
+                {/* ============ GED Center ============ */}
+                <p className="text-[10px] font-semibold text-text-muted uppercase tracking-widest px-3 mt-4 mb-2">
+                    Outils
+                </p>
+
+                <NavItem
+                    to="/documents"
+                    label="Documents"
+                    icon={
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z"
+                            />
+                        </svg>
+                    }
+                />
+
                 {/* ============ SECTION ADMIN ============ */}
                 {user && isAdmin(user.role) && (
                     <>
