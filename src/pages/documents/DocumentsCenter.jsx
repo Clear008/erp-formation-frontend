@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import {
@@ -48,8 +48,6 @@ const INITIAL_FILTERS = {
     entityType: '',
     documentType: '',
     uploadedBy: '',
-    dateFrom: '',
-    dateTo: '',
 };
 
 function getFileIcon(extension) {
@@ -68,10 +66,11 @@ export default function DocumentsCenter() {
     const [documents, setDocuments] = useState([]);
     const [uploaders, setUploaders] = useState([]);
     const [filters, setFilters] = useState(INITIAL_FILTERS);
+    const [dateSort, setDateSort] = useState('desc');
     const [loading, setLoading] = useState(true);
     const [previewDocument, setPreviewDocument] = useState(null);
 
-    const loadDocuments = useCallback(async (activeFilters = filters) => {
+    const loadDocuments = useCallback(async (activeFilters) => {
         try {
             setLoading(true);
 
@@ -85,6 +84,7 @@ export default function DocumentsCenter() {
             setDocuments(response.data);
         } catch (error) {
             console.error(error);
+
             toast.error(
                 error.response?.data?.message ||
                 'Impossible de charger les documents'
@@ -92,11 +92,21 @@ export default function DocumentsCenter() {
         } finally {
             setLoading(false);
         }
-    }, [filters]);
+    }, []);
 
+    /*
+     * Chargement automatique quand un filtre change.
+     * Le délai évite d'envoyer une requête après chaque lettre tapée.
+     */
     useEffect(() => {
-        loadDocuments(INITIAL_FILTERS);
-    }, []); // Chargement initial
+        const timeoutId = window.setTimeout(() => {
+            loadDocuments(filters);
+        }, 300);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [filters, loadDocuments]);
 
     useEffect(() => {
         const loadUploaders = async () => {
@@ -114,6 +124,19 @@ export default function DocumentsCenter() {
         loadUploaders();
     }, []);
 
+    const sortedDocuments = useMemo(() => {
+        return [...documents].sort((firstDocument, secondDocument) => {
+            const firstDate = new Date(firstDocument.uploadedAt).getTime();
+            const secondDate = new Date(secondDocument.uploadedAt).getTime();
+
+            if (dateSort === 'asc') {
+                return firstDate - secondDate;
+            }
+
+            return secondDate - firstDate;
+        });
+    }, [documents, dateSort]);
+
     const handleFilterChange = (event) => {
         const { name, value } = event.target;
 
@@ -130,12 +153,19 @@ export default function DocumentsCenter() {
 
     const handleReset = () => {
         setFilters(INITIAL_FILTERS);
-        loadDocuments(INITIAL_FILTERS);
+        setDateSort('desc');
+    };
+
+    const toggleDateSort = () => {
+        setDateSort((currentSort) =>
+            currentSort === 'desc' ? 'asc' : 'desc'
+        );
     };
 
     const handleDownload = async (document) => {
         try {
             const response = await downloadDocument(document.id);
+
             const blobUrl = window.URL.createObjectURL(
                 new Blob([response.data])
             );
@@ -143,6 +173,7 @@ export default function DocumentsCenter() {
             const link = window.document.createElement('a');
             link.href = blobUrl;
             link.download = document.nomOriginal;
+
             window.document.body.appendChild(link);
             link.click();
             link.remove();
@@ -163,11 +194,14 @@ export default function DocumentsCenter() {
 
         try {
             await deleteDocument(document.id);
+
             toast.success('Document supprimé');
             setPreviewDocument(null);
+
             await loadDocuments(filters);
         } catch (error) {
             console.error(error);
+
             toast.error(
                 error.response?.data?.message ||
                 'Impossible de supprimer le document'
@@ -177,7 +211,7 @@ export default function DocumentsCenter() {
 
     return (
         <div className="p-6 space-y-6">
-            {/* En-tête */}
+            {/* En-tête de la page */}
             <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-brand-400">
                     Outils
@@ -206,12 +240,12 @@ export default function DocumentsCenter() {
                 </div>
             </div>
 
-            {/* Filtres */}
+            {/* Formulaire de filtres */}
             <form
                 onSubmit={handleSearch}
                 className="rounded-xl border border-surface-border bg-surface-card p-4"
             >
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
                     <input
                         type="search"
                         name="q"
@@ -261,34 +295,6 @@ export default function DocumentsCenter() {
                             </option>
                         ))}
                     </select>
-
-                    <div>
-                        <label className="mb-1 block text-xs text-text-secondary">
-                            Du
-                        </label>
-
-                        <input
-                            type="date"
-                            name="dateFrom"
-                            value={filters.dateFrom}
-                            onChange={handleFilterChange}
-                            className="w-full rounded-lg border border-surface-border bg-surface-muted px-3 py-2 text-sm text-text-primary outline-none focus:border-brand-500"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block text-xs text-text-secondary">
-                            Au
-                        </label>
-
-                        <input
-                            type="date"
-                            name="dateTo"
-                            value={filters.dateTo}
-                            onChange={handleFilterChange}
-                            className="w-full rounded-lg border border-surface-border bg-surface-muted px-3 py-2 text-sm text-text-primary outline-none focus:border-brand-500"
-                        />
-                    </div>
                 </div>
 
                 <div className="mt-4 flex justify-end gap-2">
@@ -309,12 +315,15 @@ export default function DocumentsCenter() {
                 </div>
             </form>
 
-            {/* Liste */}
-            {loading ? (
+            {/* Chargement */}
+            {loading && (
                 <div className="rounded-xl border border-surface-border bg-surface-card py-16 text-center text-sm text-text-secondary">
                     Chargement des documents...
                 </div>
-            ) : documents.length === 0 ? (
+            )}
+
+            {/* Aucun résultat */}
+            {!loading && documents.length === 0 && (
                 <div className="rounded-xl border border-surface-border bg-surface-card py-16 text-center">
                     <p className="text-lg text-text-primary">
                         Aucun document trouvé
@@ -324,39 +333,71 @@ export default function DocumentsCenter() {
                         Modifiez les filtres pour élargir la recherche.
                     </p>
                 </div>
-            ) : (
+            )}
+
+            {/* Tableau */}
+            {!loading && documents.length > 0 && (
                 <div className="overflow-x-auto rounded-xl border border-surface-border bg-surface-card">
                     <table className="w-full min-w-[900px]">
                         <thead className="border-b border-surface-border bg-surface-muted">
                         <tr>
-                            {[
-                                'Fichier',
-                                'Rattachement',
-                                'Type',
-                                'Taille',
-                                'Déposé par',
-                                'Date',
-                                'Actions',
-                            ].map((heading) => (
-                                <th
-                                    key={heading}
-                                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-text-muted"
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-text-muted">
+                                Fichier
+                            </th>
+
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-text-muted">
+                                Rattachement
+                            </th>
+
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-text-muted">
+                                Type
+                            </th>
+
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-text-muted">
+                                Taille
+                            </th>
+
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-text-muted">
+                                Déposé par
+                            </th>
+
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-text-muted">
+                                <button
+                                    type="button"
+                                    onClick={toggleDateSort}
+                                    className="flex items-center gap-1 transition-colors hover:text-text-primary"
+                                    title={
+                                        dateSort === 'desc'
+                                            ? 'Afficher les plus anciens en premier'
+                                            : 'Afficher les plus récents en premier'
+                                    }
                                 >
-                                    {heading}
-                                </th>
-                            ))}
+                                    Date
+
+                                    <span
+                                        aria-hidden="true"
+                                        className="text-sm text-brand-400"
+                                    >
+                                            {dateSort === 'desc' ? '↓' : '↑'}
+                                        </span>
+                                </button>
+                            </th>
+
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-text-muted">
+                                Actions
+                            </th>
                         </tr>
                         </thead>
 
                         <tbody className="divide-y divide-surface-border">
-                        {documents.map((document) => (
+                        {sortedDocuments.map((document) => (
                             <tr
                                 key={document.id}
                                 className="transition-colors hover:bg-surface-muted"
                             >
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600/10 text-[10px] font-bold text-brand-400">
+                                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-brand-600/10 text-[10px] font-bold text-brand-400">
                                             {getFileIcon(document.extension)}
                                         </div>
 
@@ -410,7 +451,7 @@ export default function DocumentsCenter() {
                                 </td>
 
                                 <td className="px-4 py-3">
-                                    <div className="flex gap-2">
+                                    <div className="flex items-center gap-2">
                                         <button
                                             type="button"
                                             onClick={() =>
@@ -449,6 +490,7 @@ export default function DocumentsCenter() {
                 </div>
             )}
 
+            {/* Prévisualisation */}
             {previewDocument && (
                 <DocumentPreviewModal
                     document={previewDocument}
