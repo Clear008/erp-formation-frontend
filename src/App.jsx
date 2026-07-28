@@ -29,6 +29,10 @@ import PlanningPage from './pages/planning/PlanningPage';
 
 import DocumentsCenter from './pages/documents/DocumentsCenter';
 
+import PrestatairesPage from './pages/prestataires/PrestatairesPage';
+import PrestataireFormPage from './pages/prestataires/PrestataireFormPage';
+import PrestataireDetailsPage from './pages/prestataires/PrestataireDetailsPage';
+
 export default function App() {
   return (
     <>
@@ -73,6 +77,10 @@ export default function App() {
               <Route path="/factures/nouvelle" element={<FactureCreateWizard />} />
               <Route path="/cheques/nouveau" element={<ChequeCreateWizard />} />
               <Route path="/documents" element={<DocumentsCenter />} />
+              <Route path="/prestataires" element={<PrestatairesPage />} />
+              <Route path="/prestataires/nouveau" element={<PrestataireFormPage />} />
+              <Route path="/prestataires/:id" element={<PrestataireDetailsPage />} />
+              <Route path="/prestataires/:id/modifier" element={<PrestataireFormPage />} />
 
             {/* Route ADMIN uniquement */}
             <Route

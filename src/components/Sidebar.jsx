@@ -100,6 +100,24 @@ export default function Sidebar() {
                         </svg>
                     }
                 />
+                <NavItem
+                    to="/prestataires"
+                    label="Prestataires"
+                    icon={
+                        <svg
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M20 7h-4V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM10 7V5h4v2m-2 5v2m-10-3h20"
+                            />
+                        </svg>
+                    }
+                />
 
                 <NavItem
                     to="/planning"
