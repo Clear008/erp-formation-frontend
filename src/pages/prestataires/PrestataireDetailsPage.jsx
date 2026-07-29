@@ -22,6 +22,10 @@ export default function PrestataireDetailsPage() {
     const [activeTab, setActiveTab] = useState('infos');
     const [bankDetails, setBankDetails] = useState(null);
     const [bankLoading, setBankLoading] = useState(false);
+    const [availableFormateurs, setAvailableFormateurs] = useState([]);
+    const [selectedFormateurId, setSelectedFormateurId] = useState('');
+    const [formateursLoading, setFormateursLoading] = useState(false);
+    const [linkingFormateur, setLinkingFormateur] = useState(false);
 
     const canAccessBank = ['ADMIN', 'DG', 'DA'].includes(user?.role);
     const canBlock = ['ADMIN', 'DG'].includes(user?.role);
@@ -43,6 +47,76 @@ export default function PrestataireDetailsPage() {
             getBankDetails(id).then(({ data }) => setBankDetails(data)).catch(() => toast.error('Accès refusé')).finally(() => setBankLoading(false));
         }
     }, [activeTab]);
+    const loadAvailableFormateurs = async () => {
+        try {
+            setFormateursLoading(true);
+
+            const { data } = await getFormateurs({
+                actif: true
+            });
+
+            const linkedIds = new Set(
+                (prestataire?.formateurs || []).map(
+                    (formateur) => formateur.id
+                )
+            );
+
+            setAvailableFormateurs(
+                data.filter(
+                    (formateur) => !linkedIds.has(formateur.id)
+                )
+            );
+        } catch (err) {
+            toast.error(
+                err.response?.data?.message
+                || 'Erreur lors du chargement des formateurs'
+            );
+        } finally {
+            setFormateursLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (
+            activeTab === 'formateur'
+            && prestataire?.categorie === 'FORMATION'
+        ) {
+            loadAvailableFormateurs();
+        }
+    }, [
+        activeTab,
+        prestataire?.id,
+        prestataire?.formateurs?.length
+    ]);
+
+
+    const handleLinkFormateur = async () => {
+        if (!selectedFormateurId) {
+            toast.error('Sélectionnez un formateur');
+            return;
+        }
+
+        try {
+            setLinkingFormateur(true);
+
+            await linkFormateur(
+                id,
+                selectedFormateurId
+            );
+
+            toast.success('Formateur rattaché');
+            setSelectedFormateurId('');
+
+            await loadData();
+        } catch (err) {
+            toast.error(
+                err.response?.data?.message
+                || 'Erreur lors du rattachement'
+            );
+        } finally {
+            setLinkingFormateur(false);
+        }
+    };
 
     const handleStatusChange = async (statut, motif) => {
         try {
@@ -57,8 +131,21 @@ export default function PrestataireDetailsPage() {
 
     const TABS = [
         { key: 'infos', label: 'Informations' },
-        ...(canAccessBank ? [{ key: 'bancaire', label: 'Coordonnées bancaires' }] : []),
-        { key: 'formateur', label: 'Formateur lié' },
+
+        ...(canAccessBank
+            ? [{
+                key: 'bancaire',
+                label: 'Coordonnées bancaires'
+            }]
+            : []),
+
+        ...(prestataire.categorie === 'FORMATION'
+            ? [{
+                key: 'formateur',
+                label: 'Formateurs liés'
+            }]
+            : []),
+
         { key: 'documents', label: 'Documents' },
     ];
 
@@ -193,6 +280,7 @@ export default function PrestataireDetailsPage() {
 
             {/* TAB: Formateur */}
             {/* ONGLET : FORMATEURS */}
+
             {activeTab === 'formateur' && (
                 <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -206,6 +294,53 @@ export default function PrestataireDetailsPage() {
                             </p>
                         </div>
                     </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
+                        <select
+                            value={selectedFormateurId}
+                            onChange={(event) =>
+                                setSelectedFormateurId(event.target.value)
+                            }
+                            disabled={
+                                formateursLoading
+                                || linkingFormateur
+                            }
+                            className="flex-1 px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
+                        >
+                            <option value="">
+                                {formateursLoading
+                                    ? 'Chargement des formateurs...'
+                                    : 'Sélectionner un formateur'}
+                            </option>
+
+                            {availableFormateurs.map((formateur) => (
+                                <option
+                                    key={formateur.id}
+                                    value={formateur.id}
+                                >
+                                    {formateur.prenom} {formateur.nom}
+                                    {formateur.specialite
+                                        ? ` — ${formateur.specialite}`
+                                        : ''}
+                                </option>
+                            ))}
+                        </select>
+
+                        <button
+                            type="button"
+                            onClick={handleLinkFormateur}
+                            disabled={
+                                !selectedFormateurId
+                                || linkingFormateur
+                            }
+                            className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {linkingFormateur
+                                ? 'Rattachement...'
+                                : 'Rattacher'}
+                        </button>
+                    </div>
+
 
                     {prestataire.formateurs?.length > 0 ? (
                         <div className="space-y-3">
