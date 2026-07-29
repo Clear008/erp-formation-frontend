@@ -192,31 +192,114 @@ export default function PrestataireDetailsPage() {
             )}
 
             {/* TAB: Formateur */}
+            {/* ONGLET : FORMATEURS */}
             {activeTab === 'formateur' && (
                 <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-                    <h3 className="text-sm font-semibold text-white mb-4">Formateur lié</h3>
-                    {prestataire.formateurId ? (
-                        <div className="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
-                            <div>
-                                <p className="text-sm text-white font-medium">{prestataire.formateurNom}</p>
-                                <button onClick={() => navigate(`/formateurs/${prestataire.formateurId}`)} className="text-xs text-indigo-400 hover:text-indigo-300 mt-0.5">
-                                    Voir la fiche formateur →
-                                </button>
-                            </div>
-                            <button onClick={async () => {
-                                if (window.confirm('Dissocier ce formateur ?')) {
-                                    try {
-                                        await unlinkFormateur(id, prestataire.formateurId);
-                                        toast.success('Formateur dissocié');
-                                        loadData();
-                                    } catch (err) { toast.error(err.response?.data?.message || 'Erreur'); }
-                                }
-                            }} className="text-xs text-red-400 hover:text-red-300">Dissocier</button>
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="text-sm font-semibold text-white">
+                                Formateurs liés
+                            </h3>
+
+                            <p className="text-xs text-gray-500 mt-1">
+                                {prestataire.formateurs?.length || 0} formateur(s)
+                            </p>
+                        </div>
+                    </div>
+
+                    {prestataire.formateurs?.length > 0 ? (
+                        <div className="space-y-3">
+                            {prestataire.formateurs.map((formateur) => (
+                                <div
+                                    key={formateur.id}
+                                    className="flex items-center justify-between p-4 bg-gray-900/50 border border-gray-700 rounded-lg"
+                                >
+                                    <div>
+                                        <p className="text-sm text-white font-medium">
+                                            {formateur.displayName
+                                                || `${formateur.prenom || ''} ${formateur.nom || ''}`.trim()}
+                                        </p>
+
+                                        <div className="flex flex-wrap gap-3 mt-1 text-xs text-gray-400">
+                                            {formateur.code && (
+                                                <span>{formateur.code}</span>
+                                            )}
+
+                                            {formateur.specialite && (
+                                                <span>{formateur.specialite}</span>
+                                            )}
+
+                                            {formateur.email && (
+                                                <span>{formateur.email}</span>
+                                            )}
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                navigate(`/formateurs/${formateur.id}`)
+                                            }
+                                            className="text-xs text-indigo-400 hover:text-indigo-300 mt-2"
+                                        >
+                                            Voir la fiche formateur →
+                                        </button>
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+                            <span
+                                className={`px-2 py-1 rounded-full text-xs ${
+                                    formateur.actif
+                                        ? 'bg-emerald-500/10 text-emerald-400'
+                                        : 'bg-gray-700 text-gray-400'
+                                }`}
+                            >
+                                {formateur.actif ? 'Actif' : 'Inactif'}
+                            </span>
+
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                const confirmed = window.confirm(
+                                                    `Dissocier ${formateur.displayName || 'ce formateur'} ?`
+                                                );
+
+                                                if (!confirmed) return;
+
+                                                try {
+                                                    await unlinkFormateur(
+                                                        id,
+                                                        formateur.id
+                                                    );
+
+                                                    toast.success(
+                                                        'Formateur dissocié'
+                                                    );
+
+                                                    await loadData();
+                                                } catch (err) {
+                                                    toast.error(
+                                                        err.response?.data?.message
+                                                        || 'Erreur lors de la dissociation'
+                                                    );
+                                                }
+                                            }}
+                                            className="text-xs text-red-400 hover:text-red-300"
+                                        >
+                                            Dissocier
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     ) : (
                         <div className="text-center py-6 text-gray-400">
-                            <p className="text-sm">Aucun formateur lié</p>
-                            <p className="text-xs text-gray-500 mt-1">Vous pouvez rattacher un formateur depuis sa fiche ou via l'API</p>
+                            <p className="text-sm">
+                                Aucun formateur lié
+                            </p>
+
+                            <p className="text-xs text-gray-500 mt-1">
+                                Ce prestataire ne possède actuellement aucun formateur.
+                            </p>
                         </div>
                     )}
                 </div>
