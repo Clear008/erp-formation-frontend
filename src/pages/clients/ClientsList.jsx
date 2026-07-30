@@ -83,9 +83,19 @@ export default function ClientsList() {
                     <table className="w-full">
                         <thead>
                         <tr className="border-b border-gray-700">
-                            {['Code', 'Raison sociale', 'Ville', 'Email', 'Tél.', 'Contacts', 'Statut'].map((h) => (
-                                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                    {h}
+                            {[
+                                'Raison sociale',
+                                'Ville',
+                                'Email',
+                                'Contact principal',
+                                'Tél.',
+                                'Statut'
+                            ].map((header) => (
+                                <th
+                                    key={header}
+                                    className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
+                                >
+                                    {header}
                                 </th>
                             ))}
                         </tr>
@@ -97,12 +107,51 @@ export default function ClientsList() {
                                 onClick={() => navigate(`/clients/${client.id}`)}
                                 className="hover:bg-gray-700/50 cursor-pointer transition-colors"
                             >
-                                <td className="px-4 py-3 text-sm font-mono text-indigo-400 font-medium">{client.code}</td>
-                                <td className="px-4 py-3 text-sm font-medium text-white">{client.raisonSociale}</td>
+
+                                <td className="px-4 py-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center flex-shrink-0">
+                                            <svg
+                                                className="w-4 h-4"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={1.5}
+                                                    d="M3 21h18M5 21V5a2 2 0 012-2h6a2 2 0 012 2v16m4 0V9a2 2 0 00-2-2h-2M9 7h2m-2 4h2m-2 4h2"
+                                                />
+                                            </svg>
+                                        </div>
+
+                                        <span className="text-sm font-medium text-white">
+            {client.raisonSociale}
+        </span>
+                                    </div>
+                                </td>
                                 <td className="px-4 py-3 text-sm text-gray-300">{client.ville || '—'}</td>
                                 <td className="px-4 py-3 text-sm text-gray-300">{client.email || '—'}</td>
+                                <td className="px-4 py-3">
+                                    {client.contactPrincipalNom ? (
+                                        <div>
+                                            <p className="text-sm font-medium text-white">
+                                                {client.contactPrincipalPrenom}{' '}
+                                                {client.contactPrincipalNom}
+                                            </p>
+
+                                            <p className="text-xs text-gray-500 mt-0.5">
+                                                {client.contactPrincipalFonction || 'Fonction non renseignée'}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <span className="text-sm text-gray-500">
+            Aucun contact
+        </span>
+                                    )}
+                                </td>
                                 <td className="px-4 py-3 text-sm text-gray-300">{client.telephone || '—'}</td>
-                                <td className="px-4 py-3 text-sm text-gray-300">{client.contactCount}</td>
                                 <td className="px-4 py-3">
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
                         client.active
