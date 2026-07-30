@@ -170,6 +170,25 @@ export default function PrestataireDetailsPage() {
                     <button onClick={() => navigate(`/prestataires/${id}/modifier`)} className="px-3 py-2 text-sm text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600">
                         ✏️ Modifier
                     </button>
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            navigate(
+                                `/paiements-prestataires/nouveau?prestataireId=${prestataire.id}`
+                            )
+                        }
+                        disabled={prestataire.statut === 'BLOQUE'}
+                        title={
+                            prestataire.statut === 'BLOQUE'
+                                ? 'Impossible de payer un prestataire bloqué'
+                                : 'Préparer un paiement'
+                        }
+                        className="px-3 py-2 text-sm text-emerald-400 bg-emerald-500/10 rounded-lg hover:bg-emerald-500/20 border border-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        💸 Préparer un paiement
+                    </button>
+
                     {prestataire.statut === 'ACTIF' && (
                         <button onClick={() => handleStatusChange('INACTIF')} className="px-3 py-2 text-sm text-amber-400 bg-amber-500/10 rounded-lg hover:bg-amber-500/20 border border-amber-500/20">
                             Désactiver

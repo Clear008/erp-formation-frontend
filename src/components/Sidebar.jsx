@@ -130,6 +130,11 @@ export default function Sidebar() {
                     }
                 />
 
+                {/* ============ SECTION FINANCE ============ */}
+                <p className="text-[10px] font-semibold text-text-muted uppercase tracking-widest px-3 mt-4 mb-2">
+                    Finance
+                </p>
+
                 <NavItem
                     to="/factures"
                     label="Factures"
@@ -148,6 +153,24 @@ export default function Sidebar() {
                         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                                   d="M17 9V7a4 4 0 10-8 0v2M5 9h14l-1 10H6L5 9z"/>
+                        </svg>
+                    }
+                />
+                <NavItem
+                    to="/paiements-prestataires"
+                    label="Paiements prestataires"
+                    icon={
+                        <svg
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 10v2m9-6a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
                         </svg>
                     }
                 />

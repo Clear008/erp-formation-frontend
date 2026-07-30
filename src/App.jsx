@@ -33,6 +33,10 @@ import PrestatairesPage from './pages/prestataires/PrestatairesPage';
 import PrestataireFormPage from './pages/prestataires/PrestataireFormPage';
 import PrestataireDetailsPage from './pages/prestataires/PrestataireDetailsPage';
 
+import PaiementsPrestatairesPage from './pages/paiements-prestataires/PaiementsPrestatairesPage';
+import PaiementPrestataireCreatePage from './pages/paiements-prestataires/PaiementPrestataireCreatePage';
+import PaiementPrestataireDetailsPage from './pages/paiements-prestataires/PaiementPrestataireDetailsPage';
+
 export default function App() {
   return (
     <>
@@ -81,6 +85,9 @@ export default function App() {
               <Route path="/prestataires/nouveau" element={<PrestataireFormPage />} />
               <Route path="/prestataires/:id" element={<PrestataireDetailsPage />} />
               <Route path="/prestataires/:id/modifier" element={<PrestataireFormPage />} />
+            <Route path="/paiements-prestataires" element={<PaiementsPrestatairesPage />} />
+            <Route path="/paiements-prestataires/nouveau" element={<PaiementPrestataireCreatePage />} />
+            <Route path="/paiements-prestataires/:id" element={<PaiementPrestataireDetailsPage />} />
 
             {/* Route ADMIN uniquement */}
             <Route
