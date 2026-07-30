@@ -12,6 +12,24 @@ function StatusBadge({ statut }) {
     const config = PRESTATAIRE_STATUT[statut] || { label: statut, color: 'bg-gray-700 text-gray-300' };
     return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>{config.label}</span>;
 }
+function BankInput({ label, value, onChange }) {
+    return (
+        <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+                {label}
+            </label>
+
+            <input
+                type="text"
+                value={value}
+                onChange={(event) =>
+                    onChange(event.target.value)
+                }
+                className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+        </div>
+    );
+}
 
 export default function PrestataireDetailsPage() {
     const { id } = useParams();
@@ -22,6 +40,16 @@ export default function PrestataireDetailsPage() {
     const [activeTab, setActiveTab] = useState('infos');
     const [bankDetails, setBankDetails] = useState(null);
     const [bankLoading, setBankLoading] = useState(false);
+    const [editingBank, setEditingBank] = useState(false);
+    const [savingBank, setSavingBank] = useState(false);
+
+    const [bankForm, setBankForm] = useState({
+        rib: '',
+        iban: '',
+        banque: '',
+        agenceBancaire: '',
+        titulaireCompte: '',
+    });
     const [availableFormateurs, setAvailableFormateurs] = useState([]);
     const [selectedFormateurId, setSelectedFormateurId] = useState('');
     const [formateursLoading, setFormateursLoading] = useState(false);
@@ -42,11 +70,34 @@ export default function PrestataireDetailsPage() {
 
     // Charger les infos bancaires quand on clique sur l'onglet
     useEffect(() => {
-        if (activeTab === 'bancaire' && canAccessBank && !bankDetails) {
+        if (
+            activeTab === 'bancaire'
+            && canAccessBank
+            && !bankDetails
+        ) {
             setBankLoading(true);
-            getBankDetails(id).then(({ data }) => setBankDetails(data)).catch(() => toast.error('Accès refusé')).finally(() => setBankLoading(false));
+
+            getBankDetails(id)
+                .then(({ data }) => {
+                    setBankDetails(data);
+
+                    setBankForm({
+                        rib: data.rib || '',
+                        iban: data.iban || '',
+                        banque: data.banque || '',
+                        agenceBancaire: data.agenceBancaire || '',
+                        titulaireCompte: data.titulaireCompte || '',
+                    });
+                })
+                .catch(() => {
+                    toast.error('Accès refusé');
+                })
+                .finally(() => {
+                    setBankLoading(false);
+                });
         }
-    }, [activeTab]);
+    }, [activeTab, id, canAccessBank, bankDetails]);
+
     const loadAvailableFormateurs = async () => {
         try {
             setFormateursLoading(true);
@@ -115,6 +166,33 @@ export default function PrestataireDetailsPage() {
             );
         } finally {
             setLinkingFormateur(false);
+        }
+    };
+
+    const handleSaveBankDetails = async () => {
+        try {
+            setSavingBank(true);
+
+            const { data } = await updateBankDetails(
+                id,
+                bankForm
+            );
+
+            setBankDetails(data);
+            setEditingBank(false);
+
+            await loadData();
+
+            toast.success(
+                'Coordonnées bancaires enregistrées'
+            );
+        } catch (err) {
+            toast.error(
+                err.response?.data?.message
+                || 'Erreur lors de l’enregistrement'
+            );
+        } finally {
+            setSavingBank(false);
         }
     };
 
@@ -273,26 +351,145 @@ export default function PrestataireDetailsPage() {
             {/* TAB: Bancaire */}
             {activeTab === 'bancaire' && canAccessBank && (
                 <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-                    <h3 className="text-sm font-semibold text-white mb-4">Coordonnées bancaires</h3>
+                    <div className="flex items-center justify-between mb-5">
+                        <div>
+                            <h3 className="text-sm font-semibold text-white">
+                                Coordonnées bancaires
+                            </h3>
+
+                            <p className="text-xs text-gray-500 mt-1">
+                                Informations sensibles accessibles uniquement aux rôles autorisés.
+                            </p>
+                        </div>
+
+                        {!editingBank && !bankLoading && (
+                            <button
+                                type="button"
+                                onClick={() => setEditingBank(true)}
+                                className="px-3 py-2 text-sm text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-lg hover:bg-indigo-500/20"
+                            >
+                                Modifier
+                            </button>
+                        )}
+                    </div>
+
                     {bankLoading ? (
-                        <div className="flex justify-center py-8"><div className="w-6 h-6 border-4 border-gray-700 border-t-indigo-500 rounded-full animate-spin" /></div>
-                    ) : bankDetails ? (
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="flex justify-center py-8">
+                            <div className="w-6 h-6 border-4 border-gray-700 border-t-indigo-500 rounded-full animate-spin" />
+                        </div>
+                    ) : editingBank ? (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <BankInput
+                                    label="RIB"
+                                    value={bankForm.rib}
+                                    onChange={(value) =>
+                                        setBankForm((previous) => ({
+                                            ...previous,
+                                            rib: value
+                                        }))
+                                    }
+                                />
+
+                                <BankInput
+                                    label="IBAN"
+                                    value={bankForm.iban}
+                                    onChange={(value) =>
+                                        setBankForm((previous) => ({
+                                            ...previous,
+                                            iban: value
+                                        }))
+                                    }
+                                />
+
+                                <BankInput
+                                    label="Banque"
+                                    value={bankForm.banque}
+                                    onChange={(value) =>
+                                        setBankForm((previous) => ({
+                                            ...previous,
+                                            banque: value
+                                        }))
+                                    }
+                                />
+
+                                <BankInput
+                                    label="Agence bancaire"
+                                    value={bankForm.agenceBancaire}
+                                    onChange={(value) =>
+                                        setBankForm((previous) => ({
+                                            ...previous,
+                                            agenceBancaire: value
+                                        }))
+                                    }
+                                />
+
+                                <BankInput
+                                    label="Titulaire du compte"
+                                    value={bankForm.titulaireCompte}
+                                    onChange={(value) =>
+                                        setBankForm((previous) => ({
+                                            ...previous,
+                                            titulaireCompte: value
+                                        }))
+                                    }
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
+                                <button
+                                    type="button"
+                                    disabled={savingBank}
+                                    onClick={() => {
+                                        setEditingBank(false);
+
+                                        setBankForm({
+                                            rib: bankDetails?.rib || '',
+                                            iban: bankDetails?.iban || '',
+                                            banque: bankDetails?.banque || '',
+                                            agenceBancaire:
+                                                bankDetails?.agenceBancaire || '',
+                                            titulaireCompte:
+                                                bankDetails?.titulaireCompte || '',
+                                        });
+                                    }}
+                                    className="px-4 py-2 text-sm text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600"
+                                >
+                                    Annuler
+                                </button>
+
+                                <button
+                                    type="button"
+                                    disabled={savingBank}
+                                    onClick={handleSaveBankDetails}
+                                    className="px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                                >
+                                    {savingBank
+                                        ? 'Enregistrement...'
+                                        : 'Enregistrer'}
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {[
-                                ['RIB', bankDetails.rib],
-                                ['IBAN', bankDetails.iban],
-                                ['Banque', bankDetails.banque],
-                                ['Agence', bankDetails.agenceBancaire],
-                                ['Titulaire', bankDetails.titulaireCompte],
+                                ['RIB', bankDetails?.rib],
+                                ['IBAN', bankDetails?.iban],
+                                ['Banque', bankDetails?.banque],
+                                ['Agence', bankDetails?.agenceBancaire],
+                                ['Titulaire', bankDetails?.titulaireCompte],
                             ].map(([label, value]) => (
                                 <div key={label}>
-                                    <dt className="text-xs font-medium text-gray-500 uppercase">{label}</dt>
-                                    <dd className="mt-1 text-sm text-white font-mono">{value || '—'}</dd>
+                                    <dt className="text-xs font-medium text-gray-500 uppercase">
+                                        {label}
+                                    </dt>
+
+                                    <dd className="mt-1 text-sm text-white font-mono">
+                                        {value || '—'}
+                                    </dd>
                                 </div>
                             ))}
                         </div>
-                    ) : (
-                        <p className="text-gray-400 text-sm">Aucune donnée bancaire</p>
                     )}
                 </div>
             )}
