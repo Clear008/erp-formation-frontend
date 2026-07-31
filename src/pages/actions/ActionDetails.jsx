@@ -52,9 +52,14 @@ export default function ActionDetails() {
     if (!action) return null;
 
     const transitions = STATUS_TRANSITIONS[action.statut] || [];
-    const canRestrict = RESTRICTED_ROLES.includes(user?.role);
-    const availableTransitions = transitions.filter((t) => {
-        if (['CLOTUREE', 'ANNULEE'].includes(t) && !canRestrict) return false;
+    const canValidate = RESTRICTED_ROLES.includes(user?.role);
+    const availableTransitions = transitions.filter((transition) => {
+        // La validation officielle est réservée au DA, DG et ADMIN.
+        if (transition === 'VALIDEE_PLANIFIEE' && !canValidate) return false;
+
+        // Règle existante conservée temporairement pour clôture/annulation.
+        if (['CLOTUREE', 'ANNULEE'].includes(transition) && !canValidate) return false;
+
         return true;
     });
 
@@ -334,10 +339,16 @@ function StatusChangeModal({ currentStatut, transitions, onSubmit, onClose }) {
         defaultValues: { newStatus: '', comment: '' },
     });
     const selectedStatus = watch('newStatus');
+    const comment = watch('comment');
+    const cancellationNeedsReason =
+        selectedStatus === 'ANNULEE' && !comment?.trim();
 
     const doSubmit = (data) => {
         if (!data.newStatus) return toast.error('Sélectionnez un statut');
-        onSubmit(data.newStatus, data.comment);
+        if (data.newStatus === 'ANNULEE' && !data.comment?.trim()) {
+            return toast.error("Le motif d'annulation est obligatoire");
+        }
+        onSubmit(data.newStatus, data.comment?.trim() || '');
     };
 
     const inputClass = "w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none";
@@ -364,8 +375,18 @@ function StatusChangeModal({ currentStatut, transitions, onSubmit, onClose }) {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Commentaire</label>
-                        <textarea {...register('comment')} rows={3} className={inputClass} placeholder="Raison du changement..." />
+                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                            {selectedStatus === 'ANNULEE' ? "Motif d'annulation *" : 'Commentaire'}
+                        </label>
+                        <textarea
+                            {...register('comment')}
+                            rows={3}
+                            required={selectedStatus === 'ANNULEE'}
+                            className={inputClass}
+                            placeholder={selectedStatus === 'ANNULEE'
+                                ? "Expliquez la raison de l'annulation..."
+                                : 'Commentaire facultatif...'}
+                        />
                     </div>
                     {selectedStatus === 'ANNULEE' && (
                         <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-300">
@@ -379,7 +400,7 @@ function StatusChangeModal({ currentStatut, transitions, onSubmit, onClose }) {
                         </button>
                         <button
                             type="submit"
-                            disabled={!selectedStatus}
+                            disabled={!selectedStatus || cancellationNeedsReason}
                             className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                         >
                             Confirmer
