@@ -7,6 +7,7 @@ import { getAction, changeActionStatus, updateActionChecklist } from '../../api/
 import { useAuth } from '../../auth/AuthContext';
 import { ACTION_STATUS, STATUS_TRANSITIONS, WORKFLOW_STEPS, RESTRICTED_ROLES } from '../../utils/constants';
 import DocumentsTab from '../documents/components/DocumentsTab';
+import SessionsTab from './components/SessionsTab';
 
 
 function StatusBadge({ statut }) {
@@ -81,6 +82,7 @@ export default function ActionDetails() {
 
     const TABS = [
         { key: 'Infos', label: 'Infos' },
+        { key: 'Sessions', label: 'Sessions' },
         { key: 'Checklist', label: 'Checklist' },
         { key: 'Historique', label: 'Historique' },
         { key: 'Documents', label: 'Documents' },
@@ -206,6 +208,16 @@ export default function ActionDetails() {
                             <p className="text-sm text-gray-300 whitespace-pre-wrap">{action.description}</p>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* ==================== TAB: SESSIONS ==================== */}
+            {activeTab === 'Sessions' && (
+                <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+                    <SessionsTab
+                        action={action}
+                        onActionReload={loadAction}
+                    />
                 </div>
             )}
 

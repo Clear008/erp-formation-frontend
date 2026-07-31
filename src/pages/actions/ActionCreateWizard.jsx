@@ -55,7 +55,7 @@ export default function ActionCreateWizard() {
                 dateFin: form.dateFin || null,
             };
             const { data } = await createAction(payload);
-            toast.success(`Action ${data.reference} créée avec succès !`);
+            toast.success(`Action ${data.reference} crée avec succès !`);
             navigate(`/actions/${data.id}`);
         } catch (err) {
             toast.error(err.response?.data?.message || 'Erreur lors de la création');
@@ -207,7 +207,7 @@ export default function ActionCreateWizard() {
                         </div>
                         <div className="flex items-start gap-2 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-sm text-indigo-300">
                             <span>ℹ️</span>
-                            <span>L'action sera créée avec le statut <strong>« En qualification »</strong>. Une checklist de 15 éléments sera auto-générée.</span>
+                            <span>L'action sera crée avec le statut <strong>« En qualification »</strong>. Une checklist de 15 éléments sera auto-générée.</span>
                         </div>
                     </div>
                 )}
