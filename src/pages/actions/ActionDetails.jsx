@@ -65,6 +65,27 @@ export default function ActionDetails() {
 
     const currentStepNum = ACTION_STATUS[action.statut]?.step || 0;
 
+    const checklistPhaseOrder = [
+        'QUALIFICATION',
+        'CONCEPTION',
+        'PREPARATION',
+        'REALISATION',
+        'CLOTURE',
+    ];
+
+    const checklistByPhase = checklistPhaseOrder.map((phase) => {
+        const items = action.checklist?.filter(
+            (item) => item.phase === phase
+        ) || [];
+
+        return {
+            phase,
+            label: items[0]?.phaseLabel || phase,
+            items,
+            done: items.filter((item) => item.done).length,
+        };
+    });
+
     const handleChangeStatus = async (newStatus, comment) => {
         try {
             await changeActionStatus(id, { newStatus, comment });
@@ -228,48 +249,138 @@ export default function ActionDetails() {
 
             {/* ==================== TAB: CHECKLIST ==================== */}
             {activeTab === 'Checklist' && (
-                <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-                    <div className="flex items-center justify-between mb-5">
-                        <h3 className="font-semibold text-white">Checklist de suivi</h3>
-                        <span className="text-sm text-gray-400">
-              {action.checklist?.filter((i) => i.done).length}/{action.checklist?.length} complété(s)
-            </span>
+                <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 className="font-semibold text-white">
+                                Checklist guidée par phase
+                            </h3>
+                            <p className="text-sm text-gray-400 mt-1">
+                                Les éléments futurs restent visibles, mais ne génèrent
+                                pas encore d’alerte.
+                            </p>
+                        </div>
+
+                        <div className="px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+                            <p className="text-xs text-indigo-300">
+                                Phase actuelle
+                            </p>
+                            <p className="text-sm font-semibold text-indigo-200">
+                                {action.currentChecklistPhaseLabel || '—'}
+                            </p>
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        {action.checklist?.map((item) => (
-                            <label
-                                key={item.id}
-                                className={`flex items-center gap-3 p-3.5 rounded-lg border cursor-pointer transition-all ${
-                                    item.done
-                                        ? 'bg-emerald-500/5 border-emerald-500/20'
-                                        : 'bg-gray-900/50 border-gray-700 hover:border-gray-600'
-                                }`}
+
+                    {checklistByPhase.map((group) => {
+                        const currentPhaseIndex = checklistPhaseOrder.indexOf(
+                            action.currentChecklistPhase
+                        );
+                        const groupIndex = checklistPhaseOrder.indexOf(
+                            group.phase
+                        );
+                        const isCurrent =
+                            group.phase === action.currentChecklistPhase;
+                        const isFuture =
+                            currentPhaseIndex >= 0 &&
+                            groupIndex > currentPhaseIndex;
+
+                        return (
+                            <section
+                                key={group.phase}
+                                className={
+                                    'border rounded-xl overflow-hidden ' +
+                                    (isCurrent
+                                        ? 'border-indigo-500/50 bg-indigo-500/5 '
+                                        : 'border-gray-700 bg-gray-800 ') +
+                                    (isFuture ? 'opacity-65' : '')
+                                }
                             >
-                                <input
-                                    type="checkbox"
-                                    checked={item.done}
-                                    onChange={() => handleToggleChecklist(item.id, item.done)}
-                                    className="w-4 h-4 rounded border-gray-600 text-indigo-500 bg-gray-900 focus:ring-indigo-500 focus:ring-offset-0"
-                                />
-                                <div className="flex-1 min-w-0">
-                  <span className={`text-sm ${item.done ? 'line-through text-gray-500' : 'text-white'}`}>
-                    {item.label}
-                  </span>
-                                    {item.required && (
-                                        <span className="ml-2 text-[10px] text-red-400 font-semibold uppercase">obligatoire</span>
-                                    )}
+                                <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-700/70">
+                                    <div className="flex items-center gap-2">
+                                        <h4 className="font-medium text-white">
+                                            {group.label}
+                                        </h4>
+
+                                        {isCurrent && (
+                                            <span className="px-2 py-0.5 text-[10px] font-semibold uppercase rounded-full bg-indigo-500/20 text-indigo-300">
+                                                Phase actuelle
+                                            </span>
+                                        )}
+
+                                        {isFuture && (
+                                            <span className="px-2 py-0.5 text-[10px] rounded-full bg-gray-700 text-gray-400">
+                                                À venir
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <span className="text-xs text-gray-400">
+                                        {group.done}/{group.items.length}
+                                    </span>
                                 </div>
-                                {item.done && item.doneByUsername && (
-                                    <span className="text-xs text-gray-500 flex-shrink-0">
-                    {item.doneByUsername} · {new Date(item.doneAt).toLocaleDateString('fr-FR')}
-                  </span>
-                                )}
-                            </label>
-                        ))}
-                    </div>
+
+                                <div className="p-4 space-y-2">
+                                    {group.items.map((item) => (
+                                        <label
+                                            key={item.id}
+                                            className={
+                                                'flex items-center gap-3 p-3.5 rounded-lg border cursor-pointer transition-all ' +
+                                                (item.done
+                                                    ? 'bg-emerald-500/5 border-emerald-500/20'
+                                                    : 'bg-gray-900/50 border-gray-700 hover:border-gray-600')
+                                            }
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={item.done}
+                                                onChange={() =>
+                                                    handleToggleChecklist(
+                                                        item.id,
+                                                        item.done
+                                                    )
+                                                }
+                                                className="w-4 h-4 rounded border-gray-600 text-indigo-500 bg-gray-900 focus:ring-indigo-500 focus:ring-offset-0"
+                                            />
+
+                                            <div className="flex-1 min-w-0">
+                                                <span
+                                                    className={
+                                                        'text-sm ' +
+                                                        (item.done
+                                                            ? 'line-through text-gray-500'
+                                                            : 'text-white')
+                                                    }
+                                                >
+                                                    {item.label}
+                                                </span>
+
+                                                {item.required && (
+                                                    <span className="ml-2 text-[10px] text-red-400 font-semibold uppercase">
+                                                        obligatoire
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {item.done &&
+                                                item.doneByUsername && (
+                                                    <span className="text-xs text-gray-500 flex-shrink-0">
+                                                        {item.doneByUsername}
+                                                        {' · '}
+                                                        {new Date(
+                                                            item.doneAt
+                                                        ).toLocaleDateString(
+                                                            'fr-FR'
+                                                        )}
+                                                    </span>
+                                                )}
+                                        </label>
+                                    ))}
+                                </div>
+                            </section>
+                        );
+                    })}
                 </div>
             )}
-
             {/* ==================== TAB: HISTORIQUE ==================== */}
             {activeTab === 'Historique' && (
                 <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
