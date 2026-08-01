@@ -1,6 +1,6 @@
 // src/pages/actions/ActionCreateWizard.jsx
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { createAction } from '../../api/actionApi';
 import { getClients, getContacts } from '../../api/clientApi';
@@ -15,13 +15,15 @@ const STEPS = [
 
 export default function ActionCreateWizard() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const initialClientId = searchParams.get('clientId') || '';
     const [step, setStep] = useState(0);
     const [clients, setClients] = useState([]);
     const [contacts, setContacts] = useState([]);
     const [submitting, setSubmitting] = useState(false);
 
     const [form, setForm] = useState({
-        titre: '', description: '', clientId: '', contactId: '',
+        titre: '', description: '', clientId: initialClientId, contactId: '',
         type: 'INTRA', lieu: '', dateDebut: '', dateFin: '', montantEstime: '',
     });
 

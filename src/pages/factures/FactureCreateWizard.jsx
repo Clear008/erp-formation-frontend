@@ -1,6 +1,6 @@
 // src/pages/factures/FactureCreateWizard.jsx
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getClients } from '../../api/clientApi';
 import { getActionsFacturables, createFactureWizard } from '../../api/factureWizardApi';
@@ -32,8 +32,13 @@ const INITIAL_DATA = {
 
 export default function FactureCreateWizard() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const initialClientId = searchParams.get('clientId') || '';
     const [step, setStep] = useState(0);
-    const [data, setData] = useState({ ...INITIAL_DATA });
+    const [data, setData] = useState({
+        ...INITIAL_DATA,
+        clientId: initialClientId,
+    });
     const [clients, setClients] = useState([]);
     const [actions, setActions] = useState([]);
     const [submitting, setSubmitting] = useState(false);

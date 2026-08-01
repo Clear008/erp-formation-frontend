@@ -4,6 +4,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import DocumentsTab from '../documents/components/DocumentsTab';
+import { getActions } from '../../api/actionApi';
+import { getFacturesByClient } from '../../api/factureApi';
+import { countDocumentsByEntity } from '../../api/documentApi';
 import {
     getClient, updateClient, toggleClientStatus,
     getContacts, createContact, updateContact, deleteContact
@@ -18,6 +21,10 @@ export default function ClientDetails() {
     const [activeTab, setActiveTab] = useState('infos');
     const [showContactModal, setShowContactModal] = useState(false);
     const [editingContact, setEditingContact] = useState(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [actions, setActions] = useState([]);
+    const [factureCount, setFactureCount] = useState(0);
+    const [documentCount, setDocumentCount] = useState(0);
 
     useEffect(() => {
         loadData();
@@ -29,13 +36,54 @@ export default function ClientDetails() {
                 getClient(id),
                 getContacts(id),
             ]);
+
             setClient(clientRes.data);
-            setContacts(contactsRes.data);
+            setContacts(contactsRes.data || []);
+
+            // Une erreur d'indicateur ne doit pas bloquer la fiche client.
+            const [actionsResult, facturesResult, documentsResult] =
+                await Promise.allSettled([
+                    getActions({ clientId: id }),
+                    getFacturesByClient(id),
+                    countDocumentsByEntity('CLIENT', id),
+                ]);
+
+            setActions(
+                actionsResult.status === 'fulfilled'
+                    ? actionsResult.value.data || []
+                    : []
+            );
+
+            setFactureCount(
+                facturesResult.status === 'fulfilled'
+                    ? (facturesResult.value.data || []).length
+                    : 0
+            );
+
+            setDocumentCount(
+                documentsResult.status === 'fulfilled'
+                    ? Number(documentsResult.value.data) || 0
+                    : 0
+            );
         } catch {
             toast.error('Client introuvable');
             navigate('/clients');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUpdateClient = async (formData) => {
+        try {
+            const { data } = await updateClient(id, formData);
+            setClient(data);
+            setShowEditModal(false);
+            toast.success('Client modifié avec succès');
+        } catch (error) {
+            toast.error(
+                error.response?.data?.message ||
+                'Erreur lors de la modification du client'
+            );
         }
     };
 
@@ -94,47 +142,158 @@ export default function ClientDetails() {
 
     if (!client) return null;
 
+    const principalContact =
+        contacts.find((contact) => contact.principal) ||
+        contacts[0];
+
     const tabs = [
         { key: 'infos', label: 'Informations' },
-        { key: 'contacts', label: `Contacts (${contacts.length})` },
-        { key: 'documents', label: 'Documents' },
+        { key: 'contacts', label: 'Contacts (' + contacts.length + ')' },
+        { key: 'formations', label: 'Formations (' + actions.length + ')' },
+        { key: 'documents', label: 'Documents (' + documentCount + ')' },
     ];
 
+    const indicators = [
+        { key: 'formations', label: 'Formations', value: actions.length, icon: 'F' },
+        { key: null, label: 'Factures', value: factureCount, icon: 'DH' },
+        { key: 'contacts', label: 'Contacts', value: contacts.length, icon: 'C' },
+        { key: 'documents', label: 'Documents', value: documentCount, icon: 'D' },
+    ];
     return (
         <div>
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <button
-                        onClick={() => navigate('/clients')}
-                        className="text-sm text-gray-400 hover:text-indigo-400 transition-colors mb-2 inline-flex items-center gap-1"
-                    >
-                        ← Retour aux clients
-                    </button>
-                    <h1 className="text-2xl font-bold text-white">{client.raisonSociale}</h1>
-                    <div className="flex items-center gap-3 mt-1">
-                        <span className="text-sm text-gray-400 font-mono">{client.code}</span>
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                            client.active
-                                ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20'
-                                : 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20'
-                        }`}>
-              {client.active ? 'Actif' : 'Inactif'}
-            </span>
+            {/* Header enrichi */}
+            <div className="mb-6">
+                <button
+                    onClick={() => navigate('/clients')}
+                    className="text-sm text-gray-400 hover:text-indigo-400 transition-colors mb-4 inline-flex items-center gap-1"
+                >
+                    ← Retour aux clients
+                </button>
+
+                <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-5">
+                    <div className="flex items-start gap-4">
+                        <div className="w-14 h-14 rounded-xl bg-indigo-500/15 border border-indigo-500/20 text-indigo-300 flex items-center justify-center text-2xl font-bold">
+                            ▦
+                        </div>
+
+                        <div>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <h1 className="text-2xl font-bold text-white">
+                                    {client.raisonSociale}
+                                </h1>
+
+                                <span
+                                    className={
+                                        'inline-flex px-2 py-0.5 rounded-full text-xs font-medium ' +
+                                        (client.active
+                                            ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20'
+                                            : 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20')
+                                    }
+                                >
+                                    {client.active ? 'Actif' : 'Inactif'}
+                                </span>
+                            </div>
+
+                            <p className="text-sm text-gray-400 mt-1">
+                                <span className="font-mono">{client.code}</span>
+                                {client.ville ? ' · ' + client.ville : ''}
+                                {client.ice ? ' · ICE : ' + client.ice : ''}
+                            </p>
+
+                            <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-sm text-gray-400">
+                                {principalContact && (
+                                    <span>
+                                        Contact principal :{' '}
+                                        <span className="text-gray-200">
+                                            {principalContact.prenom}{' '}
+                                            {principalContact.nom}
+                                        </span>
+                                    </span>
+                                )}
+                                {client.email && <span>{client.email}</span>}
+                                {client.telephone && <span>{client.telephone}</span>}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowEditModal(true)}
+                            className="px-3.5 py-2 text-sm text-gray-200 bg-gray-800 border border-gray-700 rounded-lg hover:border-gray-600"
+                        >
+                            Modifier
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() =>
+                                navigate('/actions/new?clientId=' + client.id)
+                            }
+                            className="px-3.5 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+                        >
+                            Créer une formation
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() =>
+                                navigate('/factures/nouvelle?clientId=' + client.id)
+                            }
+                            className="px-3.5 py-2 text-sm text-gray-200 bg-gray-800 border border-gray-700 rounded-lg hover:border-gray-600"
+                        >
+                            Créer une facture
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('documents')}
+                            className="px-3.5 py-2 text-sm text-gray-200 bg-gray-800 border border-gray-700 rounded-lg hover:border-gray-600"
+                        >
+                            Ajouter un document
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleToggleStatus}
+                            className={
+                                'px-3.5 py-2 text-sm font-medium rounded-lg border transition-colors ' +
+                                (client.active
+                                    ? 'border-red-500/30 text-red-400 hover:bg-red-500/10'
+                                    : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10')
+                            }
+                        >
+                            {client.active ? 'Désactiver' : 'Activer'}
+                        </button>
                     </div>
                 </div>
-                <button
-                    onClick={handleToggleStatus}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
-                        client.active
-                            ? 'border-red-500/30 text-red-400 hover:bg-red-500/10'
-                            : 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10'
-                    }`}
-                >
-                    {client.active ? 'Désactiver' : 'Activer'}
-                </button>
             </div>
 
+            {/* Indicateurs */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {indicators.map((indicator) => (
+                    <button
+                        type="button"
+                        key={indicator.label}
+                        onClick={() =>
+                            indicator.key && setActiveTab(indicator.key)
+                        }
+                        className="text-left bg-gray-800 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors"
+                    >
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-400">
+                                {indicator.label}
+                            </span>
+                            <span className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-300 flex items-center justify-center text-xs font-bold">
+                                {indicator.icon}
+                            </span>
+                        </div>
+                        <p className="text-2xl font-bold text-white mt-2">
+                            {indicator.value}
+                        </p>
+                    </button>
+                ))}
+            </div>
             {/* Tabs */}
             <div className="border-b border-gray-700 mb-6">
                 <nav className="flex gap-6">
@@ -257,12 +416,207 @@ export default function ClientDetails() {
                 </div>
             )}
 
+            {/* Tab: Formations */}
+            {activeTab === 'formations' && (
+                <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                    {actions.length === 0 ? (
+                        <div className="text-center py-12">
+                            <p className="text-white font-medium">
+                                Aucune formation pour ce client
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    navigate('/actions/new?clientId=' + client.id)
+                                }
+                                className="mt-3 text-sm text-indigo-400 hover:text-indigo-300"
+                            >
+                                Créer la première formation
+                            </button>
+                        </div>
+                    ) : (
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b border-gray-700">
+                                    {['Référence', 'Formation', 'Statut', 'Début', 'Fin'].map(
+                                        (header) => (
+                                            <th
+                                                key={header}
+                                                className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
+                                            >
+                                                {header}
+                                            </th>
+                                        )
+                                    )}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-700/50">
+                                {actions.map((trainingAction) => (
+                                    <tr
+                                        key={trainingAction.id}
+                                        onClick={() =>
+                                            navigate('/actions/' + trainingAction.id)
+                                        }
+                                        className="hover:bg-gray-700/30 cursor-pointer transition-colors"
+                                    >
+                                        <td className="px-4 py-3 text-sm font-mono text-indigo-400">
+                                            {trainingAction.reference}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm font-medium text-white">
+                                            {trainingAction.titre}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-300">
+                                            {trainingAction.statutLabel ||
+                                                trainingAction.statut}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-300">
+                                            {trainingAction.dateDebut || '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-300">
+                                            {trainingAction.dateFin || '—'}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+            )}
+
             {/* Tab: Documents */}
             {activeTab === 'documents' && (
                 <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
                     <DocumentsTab entityType="CLIENT" entityId={client.id} />
                 </div>
             )}
+
+            {showEditModal && (
+                <ClientEditModal
+                    client={client}
+                    onSubmit={handleUpdateClient}
+                    onClose={() => setShowEditModal(false)}
+                />
+            )}
+        </div>
+    );
+}
+
+// ==================== CLIENT EDIT MODAL ====================
+
+function ClientEditModal({ client, onSubmit, onClose }) {
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm({
+        defaultValues: {
+            raisonSociale: client.raisonSociale || '',
+            ice: client.ice || '',
+            rc: client.rc || '',
+            adresse: client.adresse || '',
+            ville: client.ville || '',
+            email: client.email || '',
+            telephone: client.telephone || '',
+        },
+    });
+
+    const inputClass =
+        'w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none';
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={onClose}
+            />
+            <div className="relative bg-gray-800 border border-gray-700 rounded-xl shadow-2xl max-w-2xl w-full mx-4">
+                <div className="flex items-center justify-between p-5 border-b border-gray-700">
+                    <h2 className="text-lg font-semibold text-white">
+                        Modifier le client
+                    </h2>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-white text-2xl"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit(onSubmit)} className="p-5 space-y-4">
+                    <div>
+                        <label className="block text-sm text-gray-300 mb-1">
+                            Raison sociale *
+                        </label>
+                        <input
+                            {...register('raisonSociale', {
+                                required: 'La raison sociale est obligatoire',
+                            })}
+                            className={inputClass}
+                        />
+                        {errors.raisonSociale && (
+                            <p className="text-xs text-red-400 mt-1">
+                                {errors.raisonSociale.message}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[
+                            ['ice', 'ICE'],
+                            ['rc', 'RC'],
+                            ['ville', 'Ville'],
+                            ['telephone', 'Téléphone'],
+                        ].map(([name, label]) => (
+                            <div key={name}>
+                                <label className="block text-sm text-gray-300 mb-1">
+                                    {label}
+                                </label>
+                                <input {...register(name)} className={inputClass} />
+                            </div>
+                        ))}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm text-gray-300 mb-1">
+                            Email
+                        </label>
+                        <input
+                            type="email"
+                            {...register('email')}
+                            className={inputClass}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm text-gray-300 mb-1">
+                            Adresse
+                        </label>
+                        <textarea
+                            {...register('adresse')}
+                            rows={2}
+                            className={inputClass}
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-3 border-t border-gray-700">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 text-sm text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600"
+                        >
+                            Annuler
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                        >
+                            {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 }
