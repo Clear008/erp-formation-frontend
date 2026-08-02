@@ -188,13 +188,13 @@ function FormateurCreateModal({ onSubmit, onClose, prestataires }) {
                             <input type="email" {...register('email')} className={inputClass} />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-1">Téléphone</label>
-                            <input {...register('telephone')} className={inputClass} />
+                            <label className="block text-sm font-medium text-gray-300 mb-1">Téléphone <span className="text-red-400">*</span></label>
+                            <input {...register('telephone', { required: 'Le téléphone est obligatoire' })} className={inputClass} />
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Spécialité</label>
-                        <input {...register('specialite')} className={inputClass} placeholder="Ex: Management, Excel..." />
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Spécialité <span className="text-red-400">*</span></label>
+                        <input {...register('specialite', { required: 'La spécialité est obligatoire' })} className={inputClass} placeholder="Ex: Management, Excel..." />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -232,6 +232,14 @@ function FormateurCreateModal({ onSubmit, onClose, prestataires }) {
                         <label className="block text-sm font-medium text-gray-300 mb-1">Notes</label>
                         <textarea {...register('notes')} rows={2} className={inputClass} />
                     </div>
+                    {Object.keys(errors).length > 0 && (
+                        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
+                            {Object.values(errors).map((error, index) => (
+                                <p key={index} className="text-xs text-red-400">{error.message}</p>
+                            ))}
+                        </div>
+                    )}
+
                     <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
                         <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600">Annuler</button>
                         <button type="submit" disabled={isSubmitting} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50">

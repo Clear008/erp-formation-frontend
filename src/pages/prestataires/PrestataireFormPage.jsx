@@ -121,7 +121,11 @@ export default function PrestataireFormPage() {
                                 {errors.raisonSociale && <p className="text-xs text-red-400 mt-1">{errors.raisonSociale.message}</p>}
                             </div>
                             <div><label className={labelClass}>Nom commercial</label><input {...register('nomCommercial')} className={inputClass} /></div>
-                            <div><label className={labelClass}>ICE</label><input {...register('ice')} className={inputClass} /></div>
+                            <div>
+                                <label className={labelClass}>ICE <span className="text-red-400">*</span></label>
+                                <input {...register('ice', { required: !isPhysique ? 'ICE obligatoire' : false, pattern: !isPhysique ? { value: /^\d{15}$/, message: 'ICE : exactement 15 chiffres' } : undefined })} maxLength={15} inputMode="numeric" placeholder="15 chiffres" className={inputClass} />
+                                {errors.ice && <p className="text-xs text-red-400 mt-1">{errors.ice.message}</p>}
+                            </div>
                             <div><label className={labelClass}>IF</label><input {...register('identifiantFiscal')} className={inputClass} /></div>
                             <div><label className={labelClass}>RC</label><input {...register('registreCommerce')} className={inputClass} /></div>
                         </div>
@@ -132,8 +136,16 @@ export default function PrestataireFormPage() {
                 <div>
                     <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">Contact</h2>
                     <div className="grid grid-cols-2 gap-4">
-                        <div><label className={labelClass}>Email</label><input type="email" {...register('email')} className={inputClass} /></div>
-                        <div><label className={labelClass}>Téléphone</label><input {...register('telephone')} className={inputClass} /></div>
+                        <div>
+                            <label className={labelClass}>Email <span className="text-red-400">*</span></label>
+                            <input type="email" {...register('email', { required: 'Email obligatoire' })} className={inputClass} />
+                            {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>}
+                        </div>
+                        <div>
+                            <label className={labelClass}>Téléphone <span className="text-red-400">*</span></label>
+                            <input {...register('telephone', { required: 'Telephone obligatoire' })} className={inputClass} />
+                            {errors.telephone && <p className="text-xs text-red-400 mt-1">{errors.telephone.message}</p>}
+                        </div>
                         <div className="col-span-2"><label className={labelClass}>Adresse</label><textarea {...register('adresse')} rows={2} className={inputClass} /></div>
                         <div><label className={labelClass}>Ville</label><input {...register('ville')} className={inputClass} /></div>
                         <div><label className={labelClass}>Pays</label><input {...register('pays')} className={inputClass} /></div>
