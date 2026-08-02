@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { getFormateurs, createFormateur } from '../../api/formateurApi';
+import { getPrestataires } from '../../api/prestataireApi';
 
 export default function FormateursList() {
     const [formateurs, setFormateurs] = useState([]);
@@ -11,6 +12,7 @@ export default function FormateursList() {
     const [search, setSearch] = useState('');
     const [filterActif, setFilterActif] = useState(null);
     const [showModal, setShowModal] = useState(false);
+    const [prestatairesFormation, setPrestatairesFormation] = useState([]);
     const navigate = useNavigate();
 
     const load = useCallback(async () => {
@@ -33,9 +35,28 @@ export default function FormateursList() {
         return () => clearTimeout(t);
     }, [load]);
 
+    useEffect(() => {
+        const loadPrestataires = async () => {
+            try {
+                const { data } = await getPrestataires({ categorie: 'FORMATION', statut: 'ACTIF' });
+                setPrestatairesFormation(data);
+            } catch {
+                toast.error('Erreur lors du chargement des prestataires de formation');
+            }
+        };
+        loadPrestataires();
+    }, []);
+
     const handleCreate = async (data) => {
         try {
-            const res = await createFormateur(data);
+            const payload = {
+                ...data,
+                tarifJournalier: data.tarifJournalier === '' ? null : Number(data.tarifJournalier),
+                fraisDeplacement: data.fraisDeplacement === '' ? null : Number(data.fraisDeplacement),
+                prestataireId: data.modeCollaboration === 'RATTACHE' ? Number(data.prestataireId) : null,
+            };
+            delete payload.modeCollaboration;
+            const res = await createFormateur(payload);
             toast.success(`Formateur ${res.data.code} créé`);
             setShowModal(false);
             load();
@@ -122,13 +143,22 @@ export default function FormateursList() {
                 </div>
             )}
 
-            {showModal && <FormateurCreateModal onSubmit={handleCreate} onClose={() => setShowModal(false)} />}
+            {showModal && (
+                <FormateurCreateModal
+                    onSubmit={handleCreate}
+                    onClose={() => setShowModal(false)}
+                    prestataires={prestatairesFormation}
+                />
+            )}
         </div>
     );
 }
 
-function FormateurCreateModal({ onSubmit, onClose }) {
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
+function FormateurCreateModal({ onSubmit, onClose, prestataires }) {
+    const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm({
+        defaultValues: { modeCollaboration: 'INDEPENDANT' },
+    });
+    const modeCollaboration = watch('modeCollaboration');
     const inputClass = "w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none";
 
     return (
@@ -169,12 +199,34 @@ function FormateurCreateModal({ onSubmit, onClose }) {
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-1">Tarif journalier (DH)</label>
-                            <input type="number" step="0.01" {...register('tarifJournalier')} className={inputClass} />
+                            <input type="number" step="0.01" {...register('tarifJournalier', { min: { value: 0, message: 'Le montant doit être positif' } })} className={inputClass} />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-1">Frais déplacement (DH)</label>
-                            <input type="number" step="0.01" {...register('fraisDeplacement')} className={inputClass} />
+                            <input type="number" step="0.01" {...register('fraisDeplacement', { min: { value: 0, message: 'Le montant doit être positif' } })} className={inputClass} />
                         </div>
+                    </div>
+                    <div className="rounded-lg border border-gray-700 bg-gray-900/40 p-4 space-y-3">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-1">Mode de collaboration</label>
+                            <select {...register('modeCollaboration')} className={inputClass}>
+                                <option value="INDEPENDANT">Formateur indépendant</option>
+                                <option value="RATTACHE">Rattaché à un prestataire</option>
+                            </select>
+                        </div>
+                        {modeCollaboration === 'RATTACHE' && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Prestataire de formation <span className="text-red-400">*</span></label>
+                                <select {...register('prestataireId', { required: 'Sélectionnez un prestataire' })} className={inputClass}>
+                                    <option value="">— Choisir un prestataire —</option>
+                                    {prestataires.map((p) => (
+                                        <option key={p.id} value={p.id}>{p.code} — {p.displayName}</option>
+                                    ))}
+                                </select>
+                                {errors.prestataireId && <p className="text-xs text-red-400 mt-1">{errors.prestataireId.message}</p>}
+                                {prestataires.length === 0 && <p className="text-xs text-amber-400 mt-1">Aucun prestataire Formation actif disponible.</p>}
+                            </div>
+                        )}
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-1">Notes</label>

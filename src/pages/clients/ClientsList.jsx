@@ -211,19 +211,21 @@ function ClientCreateModal({ onSubmit, onClose }) {
                     {/* ICE + RC */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-1">ICE</label>
+                            <label className="block text-sm font-medium text-gray-300 mb-1">ICE <span className="text-red-400">*</span></label>
                             <input
-                                {...register('ice')}
+                                {...register('ice', { required: 'ICE obligatoire', pattern: { value: /^\d{15}$/, message: 'ICE : exactement 15 chiffres' } })}
                                 className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                                placeholder="Identifiant commun"
+                                placeholder="15 chiffres"
+                                maxLength={15} inputMode="numeric"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-1">RC</label>
+                            <label className="block text-sm font-medium text-gray-300 mb-1">RC <span className="text-red-400">*</span></label>
                             <input
-                                {...register('rc')}
+                                {...register('rc', { required: 'RC obligatoire', pattern: { value: /^\d{1,20}$/, message: 'RC : chiffres uniquement' } })}
                                 className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                                 placeholder="Registre de commerce"
+                                inputMode="numeric"
                             />
                         </div>
                     </div>
@@ -240,17 +242,17 @@ function ClientCreateModal({ onSubmit, onClose }) {
                     {/* Ville + Email */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-1">Ville</label>
+                            <label className="block text-sm font-medium text-gray-300 mb-1">Ville <span className="text-red-400">*</span></label>
                             <input
-                                {...register('ville')}
+                                {...register('ville', { required: 'Ville obligatoire' })}
                                 className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                            <label className="block text-sm font-medium text-gray-300 mb-1">Email <span className="text-red-400">*</span></label>
                             <input
                                 type="email"
-                                {...register('email')}
+                                {...register('email', { required: 'Email obligatoire', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Adresse email invalide' } })}
                                 className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                             />
                         </div>
@@ -258,12 +260,20 @@ function ClientCreateModal({ onSubmit, onClose }) {
 
                     {/* Téléphone */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Téléphone</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Téléphone <span className="text-red-400">*</span></label>
                         <input
-                            {...register('telephone')}
+                            {...register('telephone', { required: 'Telephone obligatoire', pattern: { value: /^(?:\+212|0)[5-7]\d{8}$/, message: 'Numero marocain invalide' } })}
                             className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                         />
                     </div>
+
+                    {Object.keys(errors).length > 0 && (
+                        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
+                            {Object.values(errors).map((error, index) => (
+                                <p key={index} className="text-xs text-red-400">{error.message}</p>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Actions */}
                     <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
