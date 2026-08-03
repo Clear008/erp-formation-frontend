@@ -36,6 +36,7 @@ import PrestataireDetailsPage from './pages/prestataires/PrestataireDetailsPage'
 import PaiementsPrestatairesPage from './pages/paiements-prestataires/PaiementsPrestatairesPage';
 import PaiementPrestataireCreatePage from './pages/paiements-prestataires/PaiementPrestataireCreatePage';
 import PaiementPrestataireDetailsPage from './pages/paiements-prestataires/PaiementPrestataireDetailsPage';
+import AlertesPage from './pages/alertes/AlertesPage';
 
 export default function App() {
   return (
@@ -88,6 +89,7 @@ export default function App() {
             <Route path="/paiements-prestataires" element={<PaiementsPrestatairesPage />} />
             <Route path="/paiements-prestataires/nouveau" element={<PaiementPrestataireCreatePage />} />
             <Route path="/paiements-prestataires/:id" element={<PaiementPrestataireDetailsPage />} />
+            <Route path="/alertes" element={<AlertesPage />} />
 
             {/* Route ADMIN uniquement */}
             <Route

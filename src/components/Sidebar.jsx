@@ -1,8 +1,10 @@
 import { NavLink } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { getAlerteCount } from '../api/alerteApi'
 import { useAuth } from '../auth/AuthContext'
 import { isAdmin, ROLE_COLORS, ROLE_LABELS } from '../utils/roles'
 
-const NavItem = ({ to, icon, label }) => (
+const NavItem = ({ to, icon, label, badge }) => (
     <NavLink
         to={to}
         className={({ isActive }) =>
@@ -14,12 +16,31 @@ const NavItem = ({ to, icon, label }) => (
         }
     >
         <span className="w-4 h-4 flex-shrink-0">{icon}</span>
-        {label}
+        <span className="flex-1">{label}</span>
+        {badge > 0 && (
+            <span className="min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                {badge > 99 ? '99+' : badge}
+            </span>
+        )}
     </NavLink>
 )
 
 export default function Sidebar() {
     const { user } = useAuth()
+    const [alertCount, setAlertCount] = useState(0)
+
+    useEffect(() => {
+        const loadCount = () => getAlerteCount()
+            .then(({ data }) => setAlertCount(data.nonTraitees || 0))
+            .catch(() => setAlertCount(0))
+        loadCount()
+        const interval = setInterval(loadCount, 60000)
+        window.addEventListener('alerts-updated', loadCount)
+        return () => {
+            clearInterval(interval)
+            window.removeEventListener('alerts-updated', loadCount)
+        }
+    }, [])
 
     return (
         <aside className="w-60 flex-shrink-0 bg-surface-card border-r border-surface-border flex flex-col h-screen sticky top-0">
@@ -179,6 +200,17 @@ export default function Sidebar() {
                 <p className="text-[10px] font-semibold text-text-muted uppercase tracking-widest px-3 mt-4 mb-2">
                     Outils
                 </p>
+
+                <NavItem
+                    to="/alertes"
+                    label="Alertes"
+                    badge={alertCount}
+                    icon={
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .53-.21 1.04-.59 1.41L4 17h5m6 0a3 3 0 01-6 0" />
+                        </svg>
+                    }
+                />
 
                 <NavItem
                     to="/documents"
