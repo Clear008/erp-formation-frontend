@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 import { getFormateurs } from '../../../api/formateurApi';
 import { changeActionStatus } from '../../../api/actionApi';
@@ -59,6 +60,7 @@ export default function SessionsTab({
                                         action,
                                         onActionReload,
                                     }) {
+    const navigate = useNavigate();
     const [sessions, setSessions] = useState([]);
     const [formateurs, setFormateurs] = useState([]);
     const [suggestion, setSuggestion] = useState(null);
@@ -472,11 +474,23 @@ export default function SessionsTab({
                             </th>
 
                             <th className="px-4 py-3 text-left">
+                                Prestataire payeur
+                            </th>
+
+                            <th className="px-4 py-3 text-left">
                                 Tarif
                             </th>
 
                             <th className="px-4 py-3 text-left">
                                 Frais
+                            </th>
+
+                            <th className="px-4 py-3 text-left">
+                                Coût HT
+                            </th>
+
+                            <th className="px-4 py-3 text-left">
+                                Règlement
                             </th>
 
                             <th className="px-4 py-3 text-left">
@@ -519,6 +533,16 @@ export default function SessionsTab({
                                     )}
                                 </td>
 
+                                <td className="px-4 py-3 text-sm font-medium text-white">
+                                    {formatAmount(session.coutHt)}
+                                </td>
+
+                                <td className="px-4 py-3 text-xs">
+                                    <span className="rounded-full bg-gray-900 px-2 py-1 text-gray-300">
+                                        {session.statutReglement === 'A_PAYER' ? 'À payer' : session.statutReglement === 'PAYE' ? 'Payé' : session.statutReglement === 'PAIEMENT_PREPARE' ? 'Paiement préparé' : session.statutReglement === 'MONTANT_A_COMPLETER' ? 'Montant à compléter' : 'Non préparé'}
+                                    </span>
+                                </td>
+
                                 <td className="px-4 py-3">
                                     <select
                                         value={session.statut}
@@ -549,6 +573,21 @@ export default function SessionsTab({
                                 </td>
 
                                 <td className="px-4 py-3 text-right">
+                                    <div className="flex justify-end gap-3">
+                                    {session.statutReglement === 'A_PAYER' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate(`/paiements-prestataires/nouveau?prestataireId=${session.prestataireId}&sessionId=${session.id}&montantHt=${session.coutHt || 0}&objet=${encodeURIComponent(`Session ${action.reference} du ${session.dateSession}`)}`)}
+                                            className="text-sm text-emerald-400 hover:text-emerald-300"
+                                        >
+                                            Préparer le paiement
+                                        </button>
+                                    )}
+                                    {session.paiementId && (
+                                        <button type="button" onClick={() => navigate(`/paiements-prestataires/${session.paiementId}`)} className="text-sm text-amber-400 hover:text-amber-300">
+                                            Voir le paiement
+                                        </button>
+                                    )}
                                     <button
                                         type="button"
                                         onClick={() =>
@@ -561,6 +600,7 @@ export default function SessionsTab({
                                     >
                                         Modifier
                                     </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}

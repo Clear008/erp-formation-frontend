@@ -18,6 +18,9 @@ export default function PaiementPrestataireCreatePage() {
 
     const initialPrestataireId =
         searchParams.get('prestataireId') || '';
+    const initialSessionId = searchParams.get('sessionId') || '';
+    const initialMontantHt = searchParams.get('montantHt') || '';
+    const initialObjet = searchParams.get('objet') || '';
 
     const [prestataires, setPrestataires] = useState([]);
 
@@ -29,9 +32,10 @@ export default function PaiementPrestataireCreatePage() {
     } = useForm({
         defaultValues: {
             prestataireId: initialPrestataireId,
-            objet: '',
+            objet: initialObjet,
+            sessionId: initialSessionId,
             description: '',
-            montantHt: '',
+            montantHt: initialMontantHt,
             tauxTva: '20',
             datePrevue: '',
             modePaiement: '',
@@ -52,6 +56,7 @@ export default function PaiementPrestataireCreatePage() {
         try {
             const payload = {
                 prestataireId: Number(data.prestataireId),
+                sessionId: initialSessionId ? Number(initialSessionId) : null,
                 objet: data.objet,
                 description: data.description || null,
                 montantHt: Number(data.montantHt),
@@ -79,6 +84,13 @@ export default function PaiementPrestataireCreatePage() {
             <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-8">
                     <form onSubmit={handleSubmit(onSubmit)} className="bg-gray-800 border border-gray-700 rounded-xl p-6 space-y-5">
+                        {initialSessionId && (
+                            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
+                                <p className="text-sm font-medium text-emerald-300">Paiement préparé depuis la session #{initialSessionId}</p>
+                                <p className="text-xs text-emerald-400/70 mt-1">Le prestataire et le montant ont été préremplis depuis la session réalisée.</p>
+                            </div>
+                        )}
+
                         {/* Prestataire */}
                         <div>
                             <label className={labelClass}>Prestataire <span className="text-red-400">*</span></label>
