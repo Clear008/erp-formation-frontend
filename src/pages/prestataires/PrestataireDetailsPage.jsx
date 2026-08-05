@@ -7,12 +7,13 @@ import { getPrestataire, changePrestataireStatus, getBankDetails, updateBankDeta
 import { getFormateurs } from '../../api/formateurApi';
 import { PRESTATAIRE_STATUT, PRESTATAIRE_CATEGORIE } from '../../utils/prestataireConstants';
 import DocumentsTab from '../documents/components/DocumentsTab';
+import { compactValue, formatIban, formatRib } from '../../utils/fieldFormatters';
 
 function StatusBadge({ statut }) {
     const config = PRESTATAIRE_STATUT[statut] || { label: statut, color: 'bg-gray-700 text-gray-300' };
     return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>{config.label}</span>;
 }
-function BankInput({ label, value, onChange }) {
+function BankInput({ label, value, onChange, formatter = (input) => input }) {
     return (
         <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -23,7 +24,7 @@ function BankInput({ label, value, onChange }) {
                 type="text"
                 value={value}
                 onChange={(event) =>
-                    onChange(event.target.value)
+                    onChange(formatter(event.target.value))
                 }
                 className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
             />
@@ -82,8 +83,8 @@ export default function PrestataireDetailsPage() {
                     setBankDetails(data);
 
                     setBankForm({
-                        rib: data.rib || '',
-                        iban: data.iban || '',
+                        rib: formatRib(data.rib || ''),
+                        iban: formatIban(data.iban || ''),
                         banque: data.banque || '',
                         agenceBancaire: data.agenceBancaire || '',
                         titulaireCompte: data.titulaireCompte || '',
@@ -175,7 +176,11 @@ export default function PrestataireDetailsPage() {
 
             const { data } = await updateBankDetails(
                 id,
-                bankForm
+                {
+                    ...bankForm,
+                    rib: compactValue(bankForm.rib),
+                    iban: compactValue(bankForm.iban),
+                }
             );
 
             setBankDetails(data);
@@ -382,6 +387,7 @@ export default function PrestataireDetailsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <BankInput
                                     label="RIB"
+                                    formatter={formatRib}
                                     value={bankForm.rib}
                                     onChange={(value) =>
                                         setBankForm((previous) => ({
@@ -393,6 +399,7 @@ export default function PrestataireDetailsPage() {
 
                                 <BankInput
                                     label="IBAN"
+                                    formatter={formatIban}
                                     value={bankForm.iban}
                                     onChange={(value) =>
                                         setBankForm((previous) => ({
@@ -444,8 +451,8 @@ export default function PrestataireDetailsPage() {
                                         setEditingBank(false);
 
                                         setBankForm({
-                                            rib: bankDetails?.rib || '',
-                                            iban: bankDetails?.iban || '',
+                                            rib: formatRib(bankDetails?.rib || ''),
+                                            iban: formatIban(bankDetails?.iban || ''),
                                             banque: bankDetails?.banque || '',
                                             agenceBancaire:
                                                 bankDetails?.agenceBancaire || '',
@@ -473,8 +480,8 @@ export default function PrestataireDetailsPage() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {[
-                                ['RIB', bankDetails?.rib],
-                                ['IBAN', bankDetails?.iban],
+                                ['RIB', formatRib(bankDetails?.rib)],
+                                ['IBAN', formatIban(bankDetails?.iban)],
                                 ['Banque', bankDetails?.banque],
                                 ['Agence', bankDetails?.agenceBancaire],
                                 ['Titulaire', bankDetails?.titulaireCompte],

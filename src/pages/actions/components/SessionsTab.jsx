@@ -192,28 +192,18 @@ export default function SessionsTab({
          * récupérer automatiquement son tarif
          * et ses frais par défaut.
          */
-        if (name === 'formateurId' && value) {
+        if (name === 'formateurId') {
             const selectedFormateur = formateurs.find(
                 (item) => String(item.id) === String(value)
             );
 
-            if (selectedFormateur) {
-                if (
-                    nextForm.tarifJournalier === '' &&
-                    selectedFormateur.tarifJournalier != null
-                ) {
-                    nextForm.tarifJournalier =
-                        selectedFormateur.tarifJournalier;
-                }
-
-                if (
-                    nextForm.fraisDeplacement === '' &&
-                    selectedFormateur.fraisDeplacement != null
-                ) {
-                    nextForm.fraisDeplacement =
-                        selectedFormateur.fraisDeplacement;
-                }
-            }
+            // Chaque changement de formateur remplace les deux valeurs.
+            // Une donnée absente doit vider la case pour ne pas conserver
+            // le montant du formateur précédemment sélectionné.
+            nextForm.tarifJournalier =
+                selectedFormateur?.tarifJournalier ?? '';
+            nextForm.fraisDeplacement =
+                selectedFormateur?.fraisDeplacement ?? '';
         }
 
         setForm(nextForm);

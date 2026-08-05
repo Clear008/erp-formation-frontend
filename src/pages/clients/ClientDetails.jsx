@@ -11,6 +11,7 @@ import {
     getClient, updateClient, toggleClientStatus,
     getContacts, createContact, updateContact, deleteContact
 } from '../../api/clientApi';
+import { compactValue, formatIce, formatPhone } from '../../utils/fieldFormatters';
 
 export default function ClientDetails() {
     const { id } = useParams();
@@ -75,7 +76,7 @@ export default function ClientDetails() {
 
     const handleUpdateClient = async (formData) => {
         try {
-            const { data } = await updateClient(id, formData);
+            const { data } = await updateClient(id, { ...formData, ice: compactValue(formData.ice), telephone: compactValue(formData.telephone) });
             setClient(data);
             setShowEditModal(false);
             toast.success('Client modifié avec succès');
@@ -99,7 +100,7 @@ export default function ClientDetails() {
 
     const handleCreateContact = async (formData) => {
         try {
-            await createContact(id, formData);
+            await createContact(id, { ...formData, telephone: compactValue(formData.telephone) });
             toast.success('Contact créé avec succès');
             setShowContactModal(false);
             const { data } = await getContacts(id);
@@ -111,7 +112,7 @@ export default function ClientDetails() {
 
     const handleUpdateContact = async (formData) => {
         try {
-            await updateContact(editingContact.id, formData);
+            await updateContact(editingContact.id, { ...formData, telephone: compactValue(formData.telephone) });
             toast.success('Contact modifié');
             setEditingContact(null);
             const { data } = await getContacts(id);
@@ -121,6 +122,20 @@ export default function ClientDetails() {
         }
     };
 
+    const handleSetPrincipal = async (contact) => {
+        if (contact.principal) return;
+        try {
+            await updateContact(contact.id, { principal: true });
+            const { data } = await getContacts(id);
+            setContacts(data);
+            toast.success(`${contact.prenom || ''} ${contact.nom} est maintenant le contact principal`.trim());
+        } catch (err) {
+            toast.error(
+                err.response?.data?.message ||
+                'Erreur lors du changement de contact principal'
+            );
+        }
+    };
     const handleDeleteContact = async (contactId) => {
         if (!window.confirm('Supprimer ce contact ?')) return;
         try {
@@ -197,7 +212,7 @@ export default function ClientDetails() {
                             <p className="text-sm text-gray-400 mt-1">
                                 <span className="font-mono">{client.code}</span>
                                 {client.ville ? ' · ' + client.ville : ''}
-                                {client.ice ? ' · ICE : ' + client.ice : ''}
+                                {client.ice ? ' · ICE : ' + formatIce(client.ice) : ''}
                             </p>
 
                             <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2 text-sm text-gray-400">
@@ -211,7 +226,7 @@ export default function ClientDetails() {
                                     </span>
                                 )}
                                 {client.email && <span>{client.email}</span>}
-                                {client.telephone && <span>{client.telephone}</span>}
+                                {client.telephone && <span>{formatPhone(client.telephone)}</span>}
                             </div>
                         </div>
                     </div>
@@ -320,12 +335,12 @@ export default function ClientDetails() {
                         {[
                             ['Raison sociale', client.raisonSociale],
                             ['Code', client.code],
-                            ['ICE', client.ice],
+                            ['ICE', formatIce(client.ice)],
                             ['RC', client.rc],
                             ['Adresse', client.adresse],
                             ['Ville', client.ville],
                             ['Email', client.email],
-                            ['Téléphone', client.telephone],
+                            ['Téléphone', formatPhone(client.telephone)],
                             ['Créé le', client.createdAt ? new Date(client.createdAt).toLocaleDateString('fr-FR') : null],
                             ['Modifié le', client.updatedAt ? new Date(client.updatedAt).toLocaleDateString('fr-FR') : null],
                         ].map(([label, value]) => (
@@ -368,13 +383,31 @@ export default function ClientDetails() {
                                 <tbody className="divide-y divide-gray-700/50">
                                 {contacts.map((c) => (
                                     <tr key={c.id} className="hover:bg-gray-700/30 transition-colors">
-                                        <td className="px-4 py-3 text-sm font-medium text-white">{c.nom}</td>
+                                        <td className="px-4 py-3 text-sm font-medium text-white">
+                                            <div className="flex items-center gap-2">
+                                                <span>{c.nom}</span>
+                                                {c.principal && (
+                                                    <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20">
+                                                        Principal
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td className="px-4 py-3 text-sm text-gray-300">{c.prenom || '—'}</td>
                                         <td className="px-4 py-3 text-sm text-gray-300">{c.fonction || '—'}</td>
                                         <td className="px-4 py-3 text-sm text-gray-300">{c.email || '—'}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-300">{c.telephone || '—'}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-300">{c.telephone ? formatPhone(c.telephone) : '—'}</td>
                                         <td className="px-4 py-3 text-right space-x-2">
-                                            <button
+                                            {!c.principal && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSetPrincipal(c)}
+                                                    className="text-emerald-400 hover:text-emerald-300 text-xs font-medium"
+                                                    title="Définir comme contact principal"
+                                                >
+                                                    Définir principal
+                                                </button>
+                                            )}                                            <button
                                                 onClick={() => setEditingContact(c)}
                                                 className="text-indigo-400 hover:text-indigo-300 text-sm"
                                             >
@@ -511,12 +544,12 @@ function ClientEditModal({ client, onSubmit, onClose }) {
     } = useForm({
         defaultValues: {
             raisonSociale: client.raisonSociale || '',
-            ice: client.ice || '',
+            ice: formatIce(client.ice || ''),
             rc: client.rc || '',
             adresse: client.adresse || '',
             ville: client.ville || '',
             email: client.email || '',
-            telephone: client.telephone || '',
+            telephone: formatPhone(client.telephone || ''),
         },
     });
 
@@ -572,7 +605,7 @@ function ClientEditModal({ client, onSubmit, onClose }) {
                                 <label className="block text-sm text-gray-300 mb-1">
                                     {label}
                                 </label>
-                                <input {...register(name)} className={inputClass} />
+                                <input {...register(name, { setValueAs: compactValue })} onInput={(event) => { if (name === 'ice') event.currentTarget.value = formatIce(event.currentTarget.value); if (name === 'telephone') event.currentTarget.value = formatPhone(event.currentTarget.value); }} className={inputClass} />
                             </div>
                         ))}
                     </div>
@@ -629,7 +662,7 @@ function ContactFormModal({ title, defaultValues = {}, onSubmit, onClose }) {
             nom: defaultValues.nom || '',
             prenom: defaultValues.prenom || '',
             email: defaultValues.email || '',
-            telephone: defaultValues.telephone || '',
+            telephone: formatPhone(defaultValues.telephone || ''),
             fonction: defaultValues.fonction || '',
         },
     });
@@ -666,7 +699,7 @@ function ContactFormModal({ title, defaultValues = {}, onSubmit, onClose }) {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-1">Téléphone</label>
-                        <input {...register('telephone')} className={inputClass} />
+                        <input {...register('telephone', { setValueAs: compactValue })} onInput={(event) => { event.currentTarget.value = formatPhone(event.currentTarget.value); }} placeholder="06 12 34 56 78" className={inputClass} />
                     </div>
                     <div className="flex justify-end gap-3 pt-3 border-t border-gray-700">
                         <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600">

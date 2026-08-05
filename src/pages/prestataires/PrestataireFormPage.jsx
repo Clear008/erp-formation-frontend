@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { getPrestataire, createPrestataire, updatePrestataire } from '../../api/prestataireApi';
 import { CATEGORIE_OPTIONS, NATURE_OPTIONS, REGIME_OPTIONS } from '../../utils/prestataireConstants';
+import { compactValue, formatIce, formatPhone } from '../../utils/fieldFormatters';
 
 export default function PrestataireFormPage() {
     const { id } = useParams();
@@ -32,9 +33,9 @@ export default function PrestataireFormPage() {
                     regimePrestataire: data.regimePrestataire, activite: data.activite || '',
                     nom: data.nom || '', prenom: data.prenom || '', cin: data.cin || '',
                     raisonSociale: data.raisonSociale || '', nomCommercial: data.nomCommercial || '',
-                    ice: data.ice || '', identifiantFiscal: data.identifiantFiscal || '',
+                    ice: formatIce(data.ice || ''), identifiantFiscal: data.identifiantFiscal || '',
                     registreCommerce: data.registreCommerce || '',
-                    email: data.email || '', telephone: data.telephone || '',
+                    email: data.email || '', telephone: formatPhone(data.telephone || ''),
                     adresse: data.adresse || '', ville: data.ville || '',
                     pays: data.pays || 'Maroc', notes: data.notes || '',
                 });
@@ -44,12 +45,17 @@ export default function PrestataireFormPage() {
     }, [id]);
 
     const onSubmit = async (data) => {
+        const payload = {
+            ...data,
+            ice: compactValue(data.ice),
+            telephone: compactValue(data.telephone),
+        };
         try {
             if (isEdit) {
-                await updatePrestataire(id, data);
+                await updatePrestataire(id, payload);
                 toast.success('Prestataire mis à jour');
             } else {
-                const res = await createPrestataire(data);
+                const res = await createPrestataire(payload);
                 toast.success(`Prestataire ${res.data.code} créé`);
             }
             navigate('/prestataires');
@@ -123,7 +129,7 @@ export default function PrestataireFormPage() {
                             <div><label className={labelClass}>Nom commercial</label><input {...register('nomCommercial')} className={inputClass} /></div>
                             <div>
                                 <label className={labelClass}>ICE <span className="text-red-400">*</span></label>
-                                <input {...register('ice', { required: !isPhysique ? 'ICE obligatoire' : false, pattern: !isPhysique ? { value: /^\d{15}$/, message: 'ICE : exactement 15 chiffres' } : undefined })} maxLength={15} inputMode="numeric" placeholder="15 chiffres" className={inputClass} />
+                                <input {...register('ice', { required: !isPhysique ? 'ICE obligatoire' : false, setValueAs: compactValue, pattern: !isPhysique ? { value: /^\d{15}$/, message: 'ICE : exactement 15 chiffres' } : undefined })} onInput={(event) => { event.currentTarget.value = formatIce(event.currentTarget.value); }} maxLength={19} inputMode="numeric" placeholder="000 000 000 000 000" className={inputClass} />
                                 {errors.ice && <p className="text-xs text-red-400 mt-1">{errors.ice.message}</p>}
                             </div>
                             <div><label className={labelClass}>IF</label><input {...register('identifiantFiscal')} className={inputClass} /></div>
@@ -143,7 +149,7 @@ export default function PrestataireFormPage() {
                         </div>
                         <div>
                             <label className={labelClass}>Téléphone <span className="text-red-400">*</span></label>
-                            <input {...register('telephone', { required: 'Telephone obligatoire' })} className={inputClass} />
+                            <input {...register('telephone', { required: 'Telephone obligatoire', setValueAs: compactValue })} onInput={(event) => { event.currentTarget.value = formatPhone(event.currentTarget.value); }} placeholder="06 12 34 56 78" className={inputClass} />
                             {errors.telephone && <p className="text-xs text-red-400 mt-1">{errors.telephone.message}</p>}
                         </div>
                         <div className="col-span-2"><label className={labelClass}>Adresse</label><textarea {...register('adresse')} rows={2} className={inputClass} /></div>

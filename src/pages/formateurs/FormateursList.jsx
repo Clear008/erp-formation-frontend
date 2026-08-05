@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { getFormateurs, createFormateur } from '../../api/formateurApi';
 import { getPrestataires } from '../../api/prestataireApi';
+import { compactValue, formatPhone } from '../../utils/fieldFormatters';
 
 export default function FormateursList() {
     const [formateurs, setFormateurs] = useState([]);
@@ -51,6 +52,7 @@ export default function FormateursList() {
         try {
             const payload = {
                 ...data,
+                telephone: compactValue(data.telephone),
                 tarifJournalier: data.tarifJournalier === '' ? null : Number(data.tarifJournalier),
                 fraisDeplacement: data.fraisDeplacement === '' ? null : Number(data.fraisDeplacement),
                 prestataireId: data.modeCollaboration === 'RATTACHE' ? Number(data.prestataireId) : null,
@@ -189,7 +191,7 @@ function FormateurCreateModal({ onSubmit, onClose, prestataires }) {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-1">Téléphone <span className="text-red-400">*</span></label>
-                            <input {...register('telephone', { required: 'Le téléphone est obligatoire' })} className={inputClass} />
+                            <input {...register('telephone', { required: 'Le téléphone est obligatoire', setValueAs: compactValue })} onInput={(event) => { event.currentTarget.value = formatPhone(event.currentTarget.value); }} placeholder="06 12 34 56 78" className={inputClass} />
                         </div>
                     </div>
                     <div>

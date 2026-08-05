@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { getClients, createClient } from '../../api/clientApi';
+import { compactValue, formatIce, formatPhone } from '../../utils/fieldFormatters';
 
 export default function ClientsList() {
     const [clients, setClients] = useState([]);
@@ -151,7 +152,7 @@ export default function ClientsList() {
         </span>
                                     )}
                                 </td>
-                                <td className="px-4 py-3 text-sm text-gray-300">{client.telephone || '—'}</td>
+                                <td className="px-4 py-3 text-sm text-gray-300">{client.telephone ? formatPhone(client.telephone) : '—'}</td>
                                 <td className="px-4 py-3">
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
                         client.active
@@ -187,7 +188,7 @@ function ClientCreateModal({ onSubmit, onClose }) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-gray-800 border border-gray-700 rounded-xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="relative bg-gray-800 border border-gray-700 rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between p-5 border-b border-gray-700">
                     <h2 className="text-lg font-semibold text-white">Nouveau client</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
@@ -213,10 +214,10 @@ function ClientCreateModal({ onSubmit, onClose }) {
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-1">ICE <span className="text-red-400">*</span></label>
                             <input
-                                {...register('ice', { required: 'ICE obligatoire', pattern: { value: /^\d{15}$/, message: 'ICE : exactement 15 chiffres' } })}
+                                {...register('ice', { required: 'ICE obligatoire', setValueAs: compactValue, pattern: { value: /^\d{15}$/, message: 'ICE : exactement 15 chiffres' } })}
                                 className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                                placeholder="15 chiffres"
-                                maxLength={15} inputMode="numeric"
+                                onInput={(event) => { event.currentTarget.value = formatIce(event.currentTarget.value); }} placeholder="000 000 000 000 000"
+                                maxLength={19} inputMode="numeric"
                             />
                         </div>
                         <div>
@@ -262,11 +263,73 @@ function ClientCreateModal({ onSubmit, onClose }) {
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-1">Téléphone <span className="text-red-400">*</span></label>
                         <input
-                            {...register('telephone', { required: 'Telephone obligatoire', pattern: { value: /^(?:\+212|0)[5-7]\d{8}$/, message: 'Numero marocain invalide' } })}
+                            {...register('telephone', { required: 'Telephone obligatoire', setValueAs: compactValue, pattern: { value: /^(?:\+212|0)[5-7]\d{8}$/, message: 'Numero marocain invalide' } })}
+                            onInput={(event) => { event.currentTarget.value = formatPhone(event.currentTarget.value); }}
+                            
                             className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                         />
                     </div>
 
+                    <div className="pt-4 border-t border-gray-700">
+                        <div className="mb-4">
+                            <h3 className="text-sm font-semibold text-white">Contact principal</h3>
+                            <p className="text-xs text-gray-400 mt-1">
+                                Ce contact sera automatiquement défini comme interlocuteur principal du client.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Nom <span className="text-red-400">*</span></label>
+                                <input
+                                    {...register('contactPrincipal.nom', { required: 'Nom du contact obligatoire' })}
+                                    className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Prénom <span className="text-red-400">*</span></label>
+                                <input
+                                    {...register('contactPrincipal.prenom', { required: 'Prénom du contact obligatoire' })}
+                                    className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-300 mb-1">Fonction <span className="text-red-400">*</span></label>
+                            <input
+                                {...register('contactPrincipal.fonction', { required: 'Fonction du contact obligatoire' })}
+                                placeholder="Ex. Responsable formation, DRH..."
+                                className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 outline-none"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Email <span className="text-red-400">*</span></label>
+                                <input
+                                    type="email"
+                                    {...register('contactPrincipal.email', {
+                                        required: 'Email du contact obligatoire',
+                                        pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email du contact invalide' }
+                                    })}
+                                    className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Téléphone <span className="text-red-400">*</span></label>
+                                <input
+                                    {...register('contactPrincipal.telephone', {
+                                        required: 'Téléphone du contact obligatoire',
+                                        pattern: { value: /^(?:\+212|0)[5-7]\d{8}$/, message: 'Téléphone du contact invalide' }
+                                    })}
+                                    onInput={(event) => { event.currentTarget.value = formatPhone(event.currentTarget.value); }}
+                                    
+                                    className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                />
+                            </div>
+                        </div>
+                    </div>
                     {Object.keys(errors).length > 0 && (
                         <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
                             {Object.values(errors).map((error, index) => (

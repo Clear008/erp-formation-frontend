@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { getFormateur, toggleFormateurStatus, getFormateurSessions } from '../../api/formateurApi';
 import DocumentsTab from '../documents/components/DocumentsTab';
 import { SESSION_STATUS } from '../../utils/sessionConstants';
+import { formatPhone } from '../../utils/fieldFormatters';
 
 export default function FormateurDetails() {
     const { id } = useParams();
@@ -104,7 +105,7 @@ export default function FormateurDetails() {
                             ['Nom', formateur.nom],
                             ['Prénom', formateur.prenom],
                             ['Email', formateur.email],
-                            ['Téléphone', formateur.telephone],
+                            ['Téléphone', formatPhone(formateur.telephone)],
                             ['Spécialité', formateur.specialite],
                             ['Tarif journalier', formateur.tarifJournalier ? `${Number(formateur.tarifJournalier).toLocaleString('fr-FR')} DH` : null],
                             ['Frais déplacement', formateur.fraisDeplacement ? `${Number(formateur.fraisDeplacement).toLocaleString('fr-FR')} DH` : null],

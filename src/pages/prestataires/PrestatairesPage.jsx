@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getPrestataires } from '../../api/prestataireApi';
 import { PRESTATAIRE_STATUT, PRESTATAIRE_CATEGORIE, CATEGORIE_OPTIONS, STATUT_OPTIONS, NATURE_OPTIONS } from '../../utils/prestataireConstants';
+import { formatPhone } from '../../utils/fieldFormatters';
 
 export default function PrestatairesPage() {
     const navigate = useNavigate();
@@ -95,7 +96,7 @@ export default function PrestatairesPage() {
                                     <td className="px-4 py-3 text-sm text-gray-300">{p.ville || '—'}</td>
                                     <td className="px-4 py-3">
                                         {p.email && <p className="text-xs text-gray-400">{p.email}</p>}
-                                        {p.telephone && <p className="text-xs text-gray-500">{p.telephone}</p>}
+                                        {p.telephone && <p className="text-xs text-gray-500">{formatPhone(p.telephone)}</p>}
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${statutStyle.color || ''}`}>{p.statutLabel}</span>
