@@ -74,30 +74,60 @@ export default function FactureEncaissementsTab({ facture, onFactureUpdated, aut
     }
 
     const isPaid = finance?.statut === 'PAYEE';
+    const isDraft = finance?.statut === 'BROUILLON';
+    const canEncaisser = !isPaid && !isDraft;
     const resteAPayer = Number(finance?.resteAPayer || 0);
+    const montantTtc = Number(finance?.montantTtc || 0);
+    const totalEncaisse = Number(finance?.totalEncaisse || 0);
+    const progressPercent = montantTtc > 0
+        ? Math.min(100, Math.round((totalEncaisse / montantTtc) * 100))
+        : 0;
 
     return (
         <div className="space-y-6">
-            {/* Finance summary cards */}
+            {/* Résumé financier compact */}
             {finance && (
-                <div className="grid grid-cols-4 gap-3">
-                    <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Montant TTC</p>
-                        <p className="text-lg font-bold text-white mt-1">{formatDH(finance.montantTtc)}</p>
+                <div className="bg-gray-800 border border-gray-700 rounded-xl p-5">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">Montant à encaisser</p>
+                            <p className="text-lg font-bold text-white mt-1">{formatDH(finance.montantTtc)}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">Déjà encaissé</p>
+                            <p className="text-lg font-bold text-emerald-400 mt-1">{formatDH(finance.totalEncaisse)}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">Reste à payer</p>
+                            <p className={`text-lg font-bold mt-1 ${resteAPayer > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                {formatDH(finance.resteAPayer)}
+                            </p>
+                        </div>
                     </div>
-                    <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Total encaissé</p>
-                        <p className="text-lg font-bold text-emerald-400 mt-1">{formatDH(finance.totalEncaisse)}</p>
+
+                    <div className="mt-5">
+                        <div className="flex items-center justify-between text-xs mb-2">
+                            <span className="text-gray-400">Progression du règlement</span>
+                            <span className="font-medium text-gray-300">{progressPercent}%</span>
+                        </div>
+                        <div className="h-2 bg-gray-900 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-emerald-500 rounded-full transition-all"
+                                style={{ width: `${progressPercent}%` }}
+                            />
+                        </div>
                     </div>
-                    <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Reste à payer</p>
-                        <p className={`text-lg font-bold mt-1 ${resteAPayer > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                            {formatDH(finance.resteAPayer)}
+                </div>
+            )}
+
+            {isDraft && (
+                <div className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3">
+                    <span className="text-amber-400">!</span>
+                    <div>
+                        <p className="text-sm font-medium text-amber-300">Facture encore en brouillon</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                            Émettez d’abord la facture avant d’enregistrer un encaissement.
                         </p>
-                    </div>
-                    <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Statut</p>
-                        <p className="text-lg font-bold text-white mt-1">{finance.statutLabel}</p>
                     </div>
                 </div>
             )}
@@ -107,7 +137,7 @@ export default function FactureEncaissementsTab({ facture, onFactureUpdated, aut
                 <h3 className="text-sm font-semibold text-white">
                     Encaissements ({encaissements.length})
                 </h3>
-                {!isPaid && (
+                {canEncaisser && (
                     <button
                         onClick={() => setShowModal(true)}
                         className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
@@ -124,9 +154,14 @@ export default function FactureEncaissementsTab({ facture, onFactureUpdated, aut
 
             {/* Table */}
             {encaissements.length === 0 ? (
-                <div className="text-center py-10 text-gray-400">
-                    <div className="text-3xl mb-2">💰</div>
-                    <p>Aucun encaissement enregistré</p>
+                <div className="rounded-xl border border-dashed border-gray-700 bg-gray-800/30 px-6 py-8 text-center">
+                    <div className="mx-auto w-10 h-10 rounded-full bg-gray-700/60 flex items-center justify-center text-gray-300 mb-3">DH</div>
+                    <p className="text-sm font-medium text-white">Aucun encaissement enregistré</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                        {isDraft
+                            ? 'La facture doit être émise avant de recevoir un règlement.'
+                            : 'Les règlements partiels ou complets apparaîtront ici.'}
+                    </p>
                 </div>
             ) : (
                 <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">

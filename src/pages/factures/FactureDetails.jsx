@@ -69,6 +69,7 @@ export default function FactureDetails() {
     ];
 
     const isPaid = facture.statut === 'PAYEE';
+    const canEncaisser = !isPaid && facture.statut !== 'BROUILLON';
 
     return (
         <div>
@@ -86,7 +87,7 @@ export default function FactureDetails() {
                     <button onClick={() => setShowStatusModal(true)} className="px-3 py-2 text-sm text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
                         Changer statut
                     </button>
-                    {!isPaid && (
+                    {canEncaisser && activeTab !== 'encaissements' && (
                         <button
                             onClick={() => {
                                 setActiveTab('encaissements');
@@ -101,7 +102,8 @@ export default function FactureDetails() {
             </div>
 
             {/* Montants cards */}
-            <div className="grid grid-cols-4 gap-4 mb-6">
+            {activeTab !== 'encaissements' && (
+                <div className="grid grid-cols-4 gap-4 mb-6">
                 {[
                     { label: 'Montant HT', value: formatDH(facture.montantHt), color: 'text-white' },
                     { label: `TVA (${facture.tva}%)`, value: formatDH(facture.montantTtc - facture.montantHt), color: 'text-gray-300' },
@@ -114,6 +116,7 @@ export default function FactureDetails() {
                     </div>
                 ))}
             </div>
+            )}
 
             {/* Tabs */}
             <div className="border-b border-gray-700 mb-6">
