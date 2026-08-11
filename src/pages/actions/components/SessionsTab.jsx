@@ -512,6 +512,24 @@ export default function SessionsTab({
                                 </td>
 
                                 <td className="px-4 py-3 text-sm text-gray-300">
+                                    {session.prestataireNom ? (
+                                        <div className="flex flex-col">
+                                            <span className="text-white">
+                                                {session.prestataireNom}
+                                            </span>
+                                            {session.prestataireCode && (
+                                                <span className="text-xs text-gray-500">
+                                                    {session.prestataireCode}
+                                                </span>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <span className="text-gray-500">
+                                            Interne
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-300">
                                     {formatAmount(
                                         session.tarifJournalier
                                     )}

@@ -6,6 +6,14 @@ import toast from 'react-hot-toast';
 import { getClients, createClient } from '../../api/clientApi';
 import { compactValue, formatIce, formatPhone } from '../../utils/fieldFormatters';
 
+function collectErrorMessages(errorObject) {
+    return Object.values(errorObject || {}).flatMap((error) => {
+        if (error?.message) return [error.message];
+        if (error && typeof error === 'object') return collectErrorMessages(error);
+        return [];
+    });
+}
+
 export default function ClientsList() {
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -321,6 +329,7 @@ function ClientCreateModal({ onSubmit, onClose }) {
                                 <input
                                     {...register('contactPrincipal.telephone', {
                                         required: 'Téléphone du contact obligatoire',
+                                        setValueAs: compactValue,
                                         pattern: { value: /^(?:\+212|0)[5-7]\d{8}$/, message: 'Téléphone du contact invalide' }
                                     })}
                                     onInput={(event) => { event.currentTarget.value = formatPhone(event.currentTarget.value); }}
@@ -332,8 +341,8 @@ function ClientCreateModal({ onSubmit, onClose }) {
                     </div>
                     {Object.keys(errors).length > 0 && (
                         <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
-                            {Object.values(errors).map((error, index) => (
-                                <p key={index} className="text-xs text-red-400">{error.message}</p>
+                            {collectErrorMessages(errors).map((message, index) => (
+                                <p key={index} className="text-xs text-red-400">{message}</p>
                             ))}
                         </div>
                     )}

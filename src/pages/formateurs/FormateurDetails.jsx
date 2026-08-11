@@ -107,6 +107,8 @@ export default function FormateurDetails() {
                             ['Email', formateur.email],
                             ['Téléphone', formatPhone(formateur.telephone)],
                             ['Spécialité', formateur.specialite],
+                            ['Collaboration', formateur.modeCollaboration === 'EXTERNE' ? 'Externe — payé via un prestataire' : 'Interne — salarié du cabinet'],
+                            ['Prestataire', formateur.prestataireNom],
                             ['Tarif journalier', formateur.tarifJournalier ? `${Number(formateur.tarifJournalier).toLocaleString('fr-FR')} DH` : null],
                             ['Frais déplacement', formateur.fraisDeplacement ? `${Number(formateur.fraisDeplacement).toLocaleString('fr-FR')} DH` : null],
                             ['Nombre de sessions', formateur.sessionCount],
