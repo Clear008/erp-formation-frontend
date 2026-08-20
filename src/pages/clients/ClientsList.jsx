@@ -1,6 +1,6 @@
 // src/pages/clients/ClientsList.jsx
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { getClients, createClient } from '../../api/clientApi';
@@ -20,6 +20,23 @@ export default function ClientsList() {
     const [search, setSearch] = useState('');
     const [showModal, setShowModal] = useState(false);
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const openCreateModal = () => {
+        setShowModal(true);
+        setSearchParams({ nouveau: '1' });
+    };
+
+    const closeCreateModal = () => {
+        setShowModal(false);
+        setSearchParams({});
+    };
+
+    useEffect(() => {
+        if (searchParams.get('nouveau') === '1') {
+            setShowModal(true);
+        }
+    }, [searchParams]);
 
     const loadClients = useCallback(async () => {
         try {
@@ -42,7 +59,7 @@ export default function ClientsList() {
         try {
             await createClient(formData);
             toast.success('Client créé avec succès');
-            setShowModal(false);
+            closeCreateModal();
             loadClients();
         } catch (err) {
             toast.error(err.response?.data?.message || 'Erreur lors de la création');
@@ -58,7 +75,7 @@ export default function ClientsList() {
                     <p className="text-sm text-gray-400 mt-1">{clients.length} client(s) enregistré(s)</p>
                 </div>
                 <button
-                    onClick={() => setShowModal(true)}
+                    onClick={openCreateModal}
                     className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                     + Nouveau client
@@ -181,7 +198,7 @@ export default function ClientsList() {
             {showModal && (
                 <ClientCreateModal
                     onSubmit={handleCreate}
-                    onClose={() => setShowModal(false)}
+                    onClose={closeCreateModal}
                 />
             )}
         </div>

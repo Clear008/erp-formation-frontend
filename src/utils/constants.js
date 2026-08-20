@@ -1,6 +1,7 @@
 export const ACTION_STATUS = {
     EN_QUALIFICATION:       { label: 'Demande en qualification',  color: 'bg-gray-100 text-gray-700',     step: 1 },
     EN_CONCEPTION:          { label: 'En conception',             color: 'bg-blue-100 text-blue-700',     step: 2 },
+    SOUMISE_A_VALIDATION:   { label: 'Soumise à validation',      color: 'bg-violet-100 text-violet-700', step: 3 },
     VALIDEE_PLANIFIEE:      { label: 'Validée / planifiée',      color: 'bg-indigo-100 text-indigo-700', step: 3 },
     PRETE_A_EXECUTER:       { label: 'Prête à exécuter',         color: 'bg-yellow-100 text-yellow-800', step: 4 },
     EN_COURS:               { label: 'En cours',                 color: 'bg-orange-100 text-orange-700', step: 5 },
@@ -25,7 +26,7 @@ export const STATUS_TRANSITIONS = {
 export const WORKFLOW_STEPS = [
     { key: 'qualification', label: 'Qualification',  statut: 'EN_QUALIFICATION' },
     { key: 'conception',    label: 'Conception',      statut: 'EN_CONCEPTION' },
-    { key: 'validation',    label: 'Validation',      statut: 'VALIDEE_PLANIFIEE' },
+    { key: 'validation',    label: 'Validation',      statut: 'SOUMISE_A_VALIDATION' },
     { key: 'preparation',   label: 'Préparation',     statut: 'PRETE_A_EXECUTER' },
     { key: 'realisation',   label: 'Réalisation',     statut: 'EN_COURS' },
     { key: 'cloture',       label: 'Clôture',         statut: 'CLOTUREE' },

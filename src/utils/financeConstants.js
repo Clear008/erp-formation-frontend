@@ -19,6 +19,8 @@ export const CHEQUE_STATUS = {
     RECU:      { label: 'Reçu',     color: 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20' },
     DEPOSE:    { label: 'Déposé',   color: 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20' },
     ENCAISSE:  { label: 'Encaissé', color: 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20' },
+    IMPAYE:    { label: 'Impayé',   color: 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20' },
+    REPRESENTE: { label: 'Représenté', color: 'bg-purple-500/10 text-purple-400 ring-1 ring-purple-500/20' },
 };
 
 export const CHEQUE_STATUS_OPTIONS = [
@@ -26,6 +28,8 @@ export const CHEQUE_STATUS_OPTIONS = [
     { value: 'RECU',     label: 'Reçu' },
     { value: 'DEPOSE',   label: 'Déposé' },
     { value: 'ENCAISSE', label: 'Encaissé' },
+    { value: 'IMPAYE',   label: 'Impayé' },
+    { value: 'REPRESENTE', label: 'Représenté' },
 ];
 
 export const MODE_PAIEMENT_OPTIONS = [

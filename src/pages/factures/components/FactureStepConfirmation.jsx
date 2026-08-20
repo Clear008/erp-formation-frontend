@@ -5,7 +5,7 @@ function formatDH(val) {
     return Number(val).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' DH';
 }
 
-export default function FactureStepConfirmation({ data, clients, actions, onSubmit, submitting }) {
+export default function FactureStepConfirmation({ data, clients, actions, cabinetSettings, onSubmit, submitting }) {
     const client = clients.find((c) => String(c.id) === String(data.clientId));
     const action = actions.find((a) => String(a.id) === String(data.actionId));
 
@@ -48,11 +48,27 @@ export default function FactureStepConfirmation({ data, clients, actions, onSubm
                             )}
                         </div>
                         {/* Émetteur */}
-                        <div className="text-right">
-                            <p className="text-sm font-semibold text-white">Cabinet Formation</p>
-                            <p className="text-xs text-gray-500">Votre adresse</p>
-                            <p className="text-xs text-gray-500">Ville, Code postal</p>
-                            <p className="text-xs text-gray-500">ICE : XXXXXXXXXXXXXX</p>
+                        <div className="max-w-sm text-right">
+                            {cabinetSettings?.logoUrl && (
+                                <img src={cabinetSettings.logoUrl} alt="Logo du cabinet" className="ml-auto mb-2 max-h-12 max-w-32 object-contain" />
+                            )}
+                            <p className="text-sm font-semibold text-white">
+                                {cabinetSettings?.raisonSociale || 'Cabinet Formation'}
+                            </p>
+                            {cabinetSettings?.adresse ? (
+                                <>
+                                    <p className="text-xs text-gray-500">{cabinetSettings.adresse}</p>
+                                    <p className="text-xs text-gray-500">
+                                        {[cabinetSettings.ville, cabinetSettings.codePostal].filter(Boolean).join(', ')}
+                                        {cabinetSettings.pays ? ` — ${cabinetSettings.pays}` : ''}
+                                    </p>
+                                    <p className="text-xs text-gray-500">ICE : {cabinetSettings.ice}</p>
+                                    {cabinetSettings.telephone && <p className="text-xs text-gray-500">Tél. : {cabinetSettings.telephone}</p>}
+                                    {cabinetSettings.email && <p className="text-xs text-gray-500">{cabinetSettings.email}</p>}
+                                </>
+                            ) : (
+                                <p className="mt-1 text-xs text-amber-400">Paramètres du cabinet non renseignés</p>
+                            )}
                         </div>
                     </div>
                 </div>

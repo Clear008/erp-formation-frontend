@@ -37,6 +37,7 @@ import PaiementsPrestatairesPage from './pages/paiements-prestataires/PaiementsP
 import PaiementPrestataireCreatePage from './pages/paiements-prestataires/PaiementPrestataireCreatePage';
 import PaiementPrestataireDetailsPage from './pages/paiements-prestataires/PaiementPrestataireDetailsPage';
 import AlertesPage from './pages/alertes/AlertesPage';
+import CabinetSettingsPage from './pages/settings/CabinetSettingsPage';
 
 export default function App() {
   return (
@@ -77,6 +78,7 @@ export default function App() {
               <Route path="/formateurs/:id" element={<FormateurDetails />} />
               <Route path="/planning" element={<PlanningPage />} />
               <Route path="/factures" element={<FacturesList />} />
+              <Route path="/factures/:id/modifier" element={<FactureCreateWizard />} />
               <Route path="/factures/:id" element={<FactureDetails />} />
               <Route path="/cheques" element={<ChequesPage />} />
               <Route path="/factures/nouvelle" element={<FactureCreateWizard />} />
@@ -91,6 +93,14 @@ export default function App() {
             <Route path="/paiements-prestataires/:id" element={<PaiementPrestataireDetailsPage />} />
             <Route path="/alertes" element={<AlertesPage />} />
 
+            <Route
+              path="/settings/cabinet"
+              element={
+                <RoleGuard allowedRoles={['ADMIN']}>
+                  <CabinetSettingsPage />
+                </RoleGuard>
+              }
+            />
             {/* Route ADMIN uniquement */}
             <Route
               path="/users"

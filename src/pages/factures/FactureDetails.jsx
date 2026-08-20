@@ -84,6 +84,14 @@ export default function FactureDetails() {
                     </div>
                 </div>
                 <div className="flex gap-2">
+                    {facture.statut === 'BROUILLON' && (
+                        <button
+                            onClick={() => navigate(`/factures/${facture.id}/modifier`)}
+                            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+                        >
+                            ✏️ Modifier
+                        </button>
+                    )}
                     <button onClick={() => setShowStatusModal(true)} className="px-3 py-2 text-sm text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
                         Changer statut
                     </button>

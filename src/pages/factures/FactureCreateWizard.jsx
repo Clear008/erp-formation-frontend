@@ -1,9 +1,15 @@
 // src/pages/factures/FactureCreateWizard.jsx
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getClients } from '../../api/clientApi';
-import { getActionsFacturables, createFactureWizard } from '../../api/factureWizardApi';
+import {
+    getActionsFacturables,
+    createFactureWizard,
+    getFactureDetail,
+    updateFactureWizard,
+} from '../../api/factureWizardApi';
+import { getCabinetSettings } from '../../api/cabinetSettingsApi';
 
 import FactureStepSource from './components/FactureStepSource';
 import FactureStepLines from './components/FactureStepLines';
@@ -18,13 +24,23 @@ const STEPS = [
     { key: 'confirmation', label: '4. Confirmation', desc: 'Vérification et émission' },
 ];
 
+const dateToInput = (date) => {
+    const local = new Date(date);
+    local.setMinutes(local.getMinutes() - local.getTimezoneOffset());
+    return local.toISOString().split('T')[0];
+};
+
+const today = new Date();
+const defaultDueDate = new Date(today);
+defaultDueDate.setDate(defaultDueDate.getDate() + 60);
+
 const INITIAL_DATA = {
     mode: 'ACTION',
     clientId: '',
     actionId: null,
     lignes: [],
-    dateFacture: new Date().toISOString().split('T')[0],
-    dateEcheance: '',
+    dateFacture: dateToInput(today),
+    dateEcheance: dateToInput(defaultDueDate),
     modePaiementAttendu: '',
     referenceInterne: '',
     commentaires: '',
@@ -32,6 +48,8 @@ const INITIAL_DATA = {
 
 export default function FactureCreateWizard() {
     const navigate = useNavigate();
+    const { id } = useParams();
+    const isEditing = Boolean(id);
     const [searchParams] = useSearchParams();
     const initialClientId = searchParams.get('clientId') || '';
     const [step, setStep] = useState(0);
@@ -41,6 +59,7 @@ export default function FactureCreateWizard() {
     });
     const [clients, setClients] = useState([]);
     const [actions, setActions] = useState([]);
+    const [cabinetSettings, setCabinetSettings] = useState(null);
     const [submitting, setSubmitting] = useState(false);
 
     // Charger les clients
@@ -48,7 +67,47 @@ export default function FactureCreateWizard() {
         getClients().then((r) => setClients(r.data)).catch(() => {});
     }, []);
 
-    // Charger les actions facturables quand le client change
+    // En modification, recharger toutes les données du brouillon.
+    useEffect(() => {
+        if (!isEditing) return;
+
+        getFactureDetail(id)
+            .then((response) => {
+                const facture = response.data;
+                if (facture.statut !== 'BROUILLON') {
+                    toast.error('Seule une facture brouillon peut être modifiée');
+                    navigate(`/factures/${id}`);
+                    return;
+                }
+                setData({
+                    mode: facture.mode || (facture.actionId ? 'ACTION' : 'PRESTATION'),
+                    clientId: String(facture.clientId),
+                    actionId: facture.actionId,
+                    lignes: (facture.lignes || []).map((ligne) => ({
+                        description: ligne.description,
+                        quantite: ligne.quantite,
+                        prixUnitaire: ligne.prixUnitaire,
+                        tauxTva: ligne.tauxTva,
+                    })),
+                    dateFacture: facture.dateFacture || '',
+                    dateEcheance: facture.dateEcheance || '',
+                    modePaiementAttendu: facture.modePaiementAttendu || '',
+                    referenceInterne: facture.referenceInterne || '',
+                    commentaires: facture.commentaires || '',
+                });
+            })
+            .catch(() => {
+                toast.error('Impossible de charger le brouillon');
+                navigate('/factures');
+            });
+    }, [id, isEditing, navigate]);
+
+        useEffect(() => {
+        getCabinetSettings()
+            .then((response) => setCabinetSettings(response.data))
+            .catch(() => setCabinetSettings(null));
+    }, []);
+// Charger les actions facturables quand le client change
     useEffect(() => {
         if (data.clientId) {
             getActionsFacturables(data.clientId)
@@ -99,16 +158,18 @@ export default function FactureCreateWizard() {
                 actionFinale,
             };
 
-            const res = await createFactureWizard(payload);
+            const res = isEditing
+                ? await updateFactureWizard(id, payload)
+                : await createFactureWizard(payload);
 
             const msg = actionFinale === 'BROUILLON'
-                ? `Brouillon ${res.data.numero} enregistré`
+                ? `Brouillon ${res.data.numero} ${isEditing ? 'modifié' : 'enregistré'}`
                 : `Facture ${res.data.numero} émise avec succès !`;
             toast.success(msg);
 
             navigate(`/factures/${res.data.id}`);
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Erreur lors de la création');
+            toast.error(err.response?.data?.message || `Erreur lors de ${isEditing ? 'la modification' : 'la création'}`);
         } finally {
             setSubmitting(false);
         }
@@ -125,7 +186,9 @@ export default function FactureCreateWizard() {
             >
                 ← Retour aux factures
             </button>
-            <h1 className="text-2xl font-bold text-white mb-6">Créer une facture</h1>
+            <h1 className="text-2xl font-bold text-white mb-6">
+                {isEditing ? 'Modifier la facture brouillon' : 'Créer une facture'}
+            </h1>
 
             {/* Step indicator */}
             <div className="flex items-center mb-8">
@@ -189,6 +252,7 @@ export default function FactureCreateWizard() {
                                 data={data}
                                 clients={clients}
                                 actions={actions}
+                                cabinetSettings={cabinetSettings}
                                 onSubmit={handleSubmit}
                                 submitting={submitting}
                             />

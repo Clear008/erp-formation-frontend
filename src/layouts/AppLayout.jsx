@@ -8,6 +8,7 @@ const PAGE_TITLES = {
   '/profile': 'Mon Profil',
   '/users': 'Gestion des utilisateurs',
   '/users/new': 'Nouvel utilisateur',
+  '/settings/cabinet': 'Paramètres du cabinet',
 }
 
 export default function AppLayout() {

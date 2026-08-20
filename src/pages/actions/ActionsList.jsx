@@ -1,6 +1,6 @@
 // src/pages/actions/ActionsList.jsx
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getActions } from '../../api/actionApi';
 import { ACTION_STATUS } from '../../utils/constants';
@@ -20,10 +20,24 @@ function StatusBadge({ statut }) {
 }
 
 export default function ActionsList() {
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const requestedStatus = searchParams.get('statut');
+    const initialStatus = requestedStatus && ACTION_STATUS[requestedStatus]
+        ? requestedStatus
+        : '';
     const [actions, setActions] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [statusFilter, setStatusFilter] = useState('');
-    const navigate = useNavigate();
+    const [statusFilter, setStatusFilter] = useState(initialStatus);
+
+    const handleStatusFilterChange = (value) => {
+        setStatusFilter(value);
+        if (value) {
+            setSearchParams({ statut: value });
+        } else {
+            setSearchParams({});
+        }
+    };
 
     useEffect(() => {
         loadActions();
@@ -63,7 +77,7 @@ export default function ActionsList() {
             <div className="flex gap-3 mb-5">
                 <select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => handleStatusFilterChange(e.target.value)}
                     className="px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                 >
                     {STATUS_OPTIONS.map((opt) => (

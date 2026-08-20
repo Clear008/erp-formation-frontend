@@ -1,11 +1,18 @@
 // src/pages/actions/ActionDetails.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { getAction, changeActionStatus, updateActionChecklist } from '../../api/actionApi';
+import {
+    getAction,
+    updateActionChecklist,
+    submitActionForValidation,
+    validateTrainingAction,
+    rejectTrainingAction,
+    closeTrainingAction,
+    cancelTrainingAction,
+} from '../../api/actionApi';
 import { useAuth } from '../../auth/AuthContext';
-import { ACTION_STATUS, STATUS_TRANSITIONS, WORKFLOW_STEPS, RESTRICTED_ROLES } from '../../utils/constants';
+import { ACTION_STATUS, WORKFLOW_STEPS, RESTRICTED_ROLES } from '../../utils/constants';
 import DocumentsTab from '../documents/components/DocumentsTab';
 import SessionsTab from './components/SessionsTab';
 
@@ -26,7 +33,7 @@ export default function ActionDetails() {
     const [action, setAction] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('Infos');
-    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [workflowDialog, setWorkflowDialog] = useState(null);
 
     const loadAction = async () => {
         try {
@@ -51,17 +58,8 @@ export default function ActionDetails() {
     }
     if (!action) return null;
 
-    const transitions = STATUS_TRANSITIONS[action.statut] || [];
-    const canValidate = RESTRICTED_ROLES.includes(user?.role);
-    const availableTransitions = transitions.filter((transition) => {
-        // La validation officielle est réservée au DA, DG et ADMIN.
-        if (transition === 'VALIDEE_PLANIFIEE' && !canValidate) return false;
-
-        // Règle existante conservée temporairement pour clôture/annulation.
-        if (['CLOTUREE', 'ANNULEE'].includes(transition) && !canValidate) return false;
-
-        return true;
-    });
+    const canMakeDecision = RESTRICTED_ROLES.includes(user?.role);
+    const canCancel = canMakeDecision && !['CLOTUREE', 'ANNULEE'].includes(action.statut);
 
     const currentStepNum = ACTION_STATUS[action.statut]?.step || 0;
 
@@ -86,15 +84,28 @@ export default function ActionDetails() {
         };
     });
 
-    const handleChangeStatus = async (newStatus, comment) => {
+    const executeWorkflowAction = async (request, successMessage) => {
         try {
-            await changeActionStatus(id, { newStatus, comment });
-            toast.success('Statut mis à jour avec succès');
-            setShowStatusModal(false);
-            loadAction();
+            await request();
+            toast.success(successMessage);
+            setWorkflowDialog(null);
+            await loadAction();
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Erreur lors du changement de statut');
+            toast.error(err.response?.data?.message || "L'action n'a pas pu être exécutée");
         }
+    };
+
+    const handleReasonSubmit = (comment) => {
+        if (workflowDialog === 'reject') {
+            return executeWorkflowAction(
+                () => rejectTrainingAction(id, { comment }),
+                'Action renvoyée en conception'
+            );
+        }
+        return executeWorkflowAction(
+            () => cancelTrainingAction(id, { comment }),
+            'Action annulée'
+        );
     };
 
     const handleToggleChecklist = async (itemId, currentDone) => {
@@ -125,15 +136,57 @@ export default function ActionDetails() {
                     <h1 className="text-2xl font-bold text-white">{action.reference}</h1>
                     <p className="text-sm text-gray-400 mt-0.5">{action.titre}</p>
                 </div>
-                {availableTransitions.length > 0 && (
-                    <button
-                        onClick={() => setShowStatusModal(true)}
-                        className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-                    >
-                        Changer le statut
-                    </button>
-                )}
-            </div>
+                <div className="flex flex-wrap justify-end gap-2">
+                    {action.statut === 'EN_CONCEPTION' && (
+                        <button
+                            onClick={() => executeWorkflowAction(
+                                () => submitActionForValidation(id),
+                                'Action soumise pour validation'
+                            )}
+                            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700"
+                        >
+                            Soumettre pour validation
+                        </button>
+                    )}
+                    {action.statut === 'SOUMISE_A_VALIDATION' && canMakeDecision && (
+                        <>
+                            <button
+                                onClick={() => setWorkflowDialog('reject')}
+                                className="px-4 py-2 bg-gray-700 text-gray-200 text-sm font-medium rounded-lg hover:bg-gray-600"
+                            >
+                                Refuser
+                            </button>
+                            <button
+                                onClick={() => executeWorkflowAction(
+                                    () => validateTrainingAction(id),
+                                    'Action validée'
+                                )}
+                                className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700"
+                            >
+                                Valider
+                            </button>
+                        </>
+                    )}
+                    {action.statut === 'REALISEE' && canMakeDecision && (
+                        <button
+                            onClick={() => executeWorkflowAction(
+                                () => closeTrainingAction(id),
+                                'Action clôturée'
+                            )}
+                            className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700"
+                        >
+                            Clôturer
+                        </button>
+                    )}
+                    {canCancel && (
+                        <button
+                            onClick={() => setWorkflowDialog('cancel')}
+                            className="px-4 py-2 border border-red-500/40 text-red-400 text-sm font-medium rounded-lg hover:bg-red-500/10"
+                        >
+                            Annuler l'action
+                        </button>
+                    )}
+                </div>            </div>
 
             {/* Workflow Progress */}
             <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mb-6">
@@ -431,89 +484,60 @@ export default function ActionDetails() {
             )}
 
             {/* ==================== STATUS CHANGE MODAL ==================== */}
-            {showStatusModal && (
-                <StatusChangeModal
-                    currentStatut={action.statut}
-                    transitions={availableTransitions}
-                    onSubmit={handleChangeStatus}
-                    onClose={() => setShowStatusModal(false)}
+            {workflowDialog && (
+                <WorkflowReasonModal
+                    type={workflowDialog}
+                    onSubmit={handleReasonSubmit}
+                    onClose={() => setWorkflowDialog(null)}
                 />
-            )}
-        </div>
+            )}        </div>
     );
 }
 
-// ==================== STATUS CHANGE MODAL ====================
+// ==================== WORKFLOW REASON MODAL ====================
 
-function StatusChangeModal({ currentStatut, transitions, onSubmit, onClose }) {
-    const { register, handleSubmit, watch } = useForm({
-        defaultValues: { newStatus: '', comment: '' },
-    });
-    const selectedStatus = watch('newStatus');
-    const comment = watch('comment');
-    const cancellationNeedsReason =
-        selectedStatus === 'ANNULEE' && !comment?.trim();
+function WorkflowReasonModal({ type, onSubmit, onClose }) {
+    const [comment, setComment] = useState('');
+    const isCancellation = type === 'cancel';
+    const title = isCancellation ? "Annuler l'action" : 'Refuser la validation';
+    const label = isCancellation ? "Motif d'annulation" : 'Motif du refus';
 
-    const doSubmit = (data) => {
-        if (!data.newStatus) return toast.error('Sélectionnez un statut');
-        if (data.newStatus === 'ANNULEE' && !data.comment?.trim()) {
-            return toast.error("Le motif d'annulation est obligatoire");
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        if (!comment.trim()) {
+            toast.error(`${label} obligatoire`);
+            return;
         }
-        onSubmit(data.newStatus, data.comment?.trim() || '');
+        onSubmit(comment.trim());
     };
-
-    const inputClass = "w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none";
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
             <div className="relative bg-gray-800 border border-gray-700 rounded-xl shadow-2xl max-w-md w-full mx-4">
                 <div className="flex items-center justify-between p-5 border-b border-gray-700">
-                    <h2 className="text-lg font-semibold text-white">Changer le statut</h2>
+                    <h2 className="text-lg font-semibold text-white">{title}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
                 </div>
-                <form onSubmit={handleSubmit(doSubmit)} className="p-5 space-y-4">
-                    <p className="text-sm text-gray-400">
-                        Statut actuel : <span className="text-white font-medium">{ACTION_STATUS[currentStatut]?.label}</span>
-                    </p>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Nouveau statut</label>
-                        <select {...register('newStatus')} className={inputClass}>
-                            <option value="">— Choisir un statut —</option>
-                            {transitions.map((t) => (
-                                <option key={t} value={t}>{ACTION_STATUS[t]?.label || t}</option>
-                            ))}
-                        </select>
-                    </div>
+                <form onSubmit={handleSubmit} className="p-5 space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-1">
-                            {selectedStatus === 'ANNULEE' ? "Motif d'annulation *" : 'Commentaire'}
+                            {label} *
                         </label>
                         <textarea
-                            {...register('comment')}
-                            rows={3}
-                            required={selectedStatus === 'ANNULEE'}
-                            className={inputClass}
-                            placeholder={selectedStatus === 'ANNULEE'
-                                ? "Expliquez la raison de l'annulation..."
-                                : 'Commentaire facultatif...'}
+                            value={comment}
+                            onChange={(event) => setComment(event.target.value)}
+                            rows={4}
+                            required
+                            className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 outline-none"
+                            placeholder="Expliquez la décision..."
                         />
                     </div>
-                    {selectedStatus === 'ANNULEE' && (
-                        <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-300">
-                            <span>⚠️</span>
-                            <span>L'annulation est irréversible. Ajoutez un commentaire explicatif.</span>
-                        </div>
-                    )}
                     <div className="flex justify-end gap-3 pt-3 border-t border-gray-700">
                         <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600">
-                            Annuler
+                            Retour
                         </button>
-                        <button
-                            type="submit"
-                            disabled={!selectedStatus || cancellationNeedsReason}
-                            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors"
-                        >
+                        <button type="submit" className={`px-4 py-2 text-sm font-medium text-white rounded-lg ${isCancellation ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}>
                             Confirmer
                         </button>
                     </div>

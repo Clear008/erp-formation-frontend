@@ -23,3 +23,18 @@ export const getActionChecklist = (id) =>
 
 export const updateActionChecklist = (id, items) =>
     axiosClient.put(`/api/actions/${id}/checklist`, { items });
+
+export const submitActionForValidation = (id) =>
+    axiosClient.post(`/api/actions/${id}/submit-validation`);
+
+export const validateTrainingAction = (id, data = {}) =>
+    axiosClient.post(`/api/actions/${id}/validate`, data);
+
+export const rejectTrainingAction = (id, data) =>
+    axiosClient.post(`/api/actions/${id}/reject`, data);
+
+export const closeTrainingAction = (id, data = {}) =>
+    axiosClient.post(`/api/actions/${id}/close`, data);
+
+export const cancelTrainingAction = (id, data) =>
+    axiosClient.post(`/api/actions/${id}/cancel`, data);

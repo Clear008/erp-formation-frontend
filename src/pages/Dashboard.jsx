@@ -8,6 +8,7 @@ import { getFormateurs } from '../api/formateurApi';
 import { getPlanningSessions } from '../api/sessionApi';
 import { getFactures } from '../api/factureApi';
 import { getAlertes, getAlerteCount } from '../api/alerteApi';
+import { getPaiements } from '../api/paiementPrestataireApi';
 
 const CLOSED_ACTIONS = ['CLOTUREE', 'ANNULEE'];
 const CLOSED_FACTURES = ['PAYEE'];
@@ -37,7 +38,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
     actions: [], clients: [], formateurs: [], sessions: [],
-    factures: [], alertes: [], alertCount: {},
+    factures: [], paiements: [], alertes: [], alertCount: {},
   });
 
   useEffect(() => {
@@ -52,6 +53,7 @@ export default function Dashboard() {
         getFormateurs({ actif: true }),
         getPlanningSessions({ dateFrom: localIso(today), dateTo: localIso(future) }),
         getFactures({}),
+        getPaiements({ statut: 'A_VALIDER' }),
         getAlertes({ priorite: 'HAUTE', traitee: false }),
         getAlerteCount(),
       ]);
@@ -65,8 +67,9 @@ export default function Dashboard() {
         formateurs: value(2, []),
         sessions: value(3, []),
         factures: value(4, []),
-        alertes: value(5, []),
-        alertCount: value(6, {}),
+        paiements: value(5, []),
+        alertes: value(6, []),
+        alertCount: value(7, {}),
       });
 
       if (results.every((result) => result.status === 'rejected')) {
@@ -82,6 +85,33 @@ export default function Dashboard() {
   const greeting = now.getHours() < 12 ? 'Bonjour' : now.getHours() < 18 ? 'Bon après-midi' : 'Bonsoir';
 
   const activeActions = data.actions.filter((item) => !CLOSED_ACTIONS.includes(item.statut));
+  const pendingActionValidations = data.actions.filter(
+    (item) => item.statut === 'SOUMISE_A_VALIDATION'
+  );
+  const pendingPaymentValidations = data.paiements.filter(
+    (item) => item.statut === 'A_VALIDER'
+  );
+  const validationRequests = [
+    ...pendingActionValidations.map((item) => ({
+      key: `action-${item.id}`,
+      type: 'Action de formation',
+      reference: item.reference,
+      title: item.titre,
+      subtitle: item.clientRaisonSociale || 'Client non renseigné',
+      detail: item.dateDebut ? `${formatDate(item.dateDebut)}${item.dateFin ? ` → ${formatDate(item.dateFin)}` : ''}` : null,
+      route: `/actions/${item.id}`,
+    })),
+    ...pendingPaymentValidations.map((item) => ({
+      key: `paiement-${item.id}`,
+      type: 'Paiement prestataire',
+      reference: item.reference,
+      title: item.objet || 'Paiement à valider',
+      subtitle: item.prestataireDisplayName || item.prestataireCode || 'Prestataire',
+      detail: formatMoney(item.montantTtc),
+      route: `/paiements-prestataires/${item.id}`,
+    })),
+  ];
+  const canValidateActions = ['DA', 'DG', 'ADMIN'].includes(user?.role);
   const upcomingSessions = [...data.sessions]
     .filter((item) => item.dateSession >= today && item.statut !== 'ANNULEE')
     .sort((a, b) => a.dateSession.localeCompare(b.dateSession))
@@ -118,8 +148,9 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-7">
         <Kpi label="Actions actives" value={activeActions.length} icon="🎓" onClick={() => navigate('/actions')} />
+        <Kpi label="À valider" value={validationRequests.length} icon="✓" tone="violet" onClick={() => navigate('/actions?statut=SOUMISE_A_VALIDATION')} />
         <Kpi label="Sessions à venir" value={data.sessions.length} icon="📅" onClick={() => navigate('/planning')} />
         <Kpi label="Factures en retard" value={overdueInvoices.length} icon="⚠" tone="red" onClick={() => navigate('/factures')} />
         <Kpi label="Alertes" value={data.alertCount.nonTraitees || 0} icon="🔔" tone="amber" onClick={() => navigate('/alertes')} />
@@ -127,6 +158,45 @@ export default function Dashboard() {
         <Kpi label="Formateurs actifs" value={data.formateurs.length} icon="👤" onClick={() => navigate('/formateurs')} />
       </div>
 
+      <section className="rounded-xl border border-violet-500/30 bg-violet-500/5 p-5">
+        <SectionHeader
+          title={canValidateActions ? 'Demandes à valider' : 'Demandes soumises pour validation'}
+          action="Voir les alertes"
+          onClick={() => navigate('/alertes')}
+        />
+        {validationRequests.length === 0 ? (
+          <Empty text={canValidateActions
+            ? 'Aucune demande en attente de validation.'
+            : 'Aucune demande soumise pour validation.'}
+          />
+        ) : (
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {validationRequests.slice(0, 6).map((item) => (
+              <button
+                key={item.key}
+                onClick={() => navigate(item.route)}
+                className="rounded-lg border border-violet-500/20 bg-gray-900/50 p-4 text-left hover:border-violet-400/60 hover:bg-violet-500/10"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-violet-400">{item.type}</p>
+                    <p className="mt-1 text-xs font-medium text-gray-400">{item.reference}</p>
+                    <p className="mt-1 text-sm font-semibold text-white">{item.title}</p>
+                  </div>
+                  <span className="rounded-full bg-violet-500/15 px-2 py-1 text-[10px] font-medium text-violet-300">
+                    En attente
+                  </span>
+                </div>
+                <p className="mt-3 text-xs text-gray-400">{item.subtitle}</p>
+                {item.detail && <p className="mt-1 text-xs text-gray-500">{item.detail}</p>}
+                <p className="mt-3 text-xs font-medium text-violet-400">
+                  {canValidateActions ? 'Ouvrir pour décider →' : 'Consulter la demande →'}
+                </p>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <section className="rounded-xl border border-gray-700 bg-gray-800 p-5 xl:col-span-2">
           <SectionHeader title="Prochaines sessions" action="Voir le planning" onClick={() => navigate('/planning')} />
@@ -199,7 +269,7 @@ export default function Dashboard() {
           <h2 className="text-sm font-semibold text-white">Actions rapides</h2>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <Quick label="Nouvelle action" icon="🎓" onClick={() => navigate('/actions/new')} />
-            <Quick label="Nouveau client" icon="🏢" onClick={() => navigate('/clients')} />
+            <Quick label="Nouveau client" icon="🏢" onClick={() => navigate('/clients?nouveau=1')} />
             <Quick label="Créer une facture" icon="📄" onClick={() => navigate('/factures/nouvelle')} />
             <Quick label="Préparer un paiement" icon="💳" onClick={() => navigate('/paiements-prestataires/nouveau')} />
           </div>
@@ -214,6 +284,7 @@ function Kpi({ label, value, icon, tone = 'indigo', onClick }) {
     indigo: 'border-gray-700 text-indigo-400',
     red: 'border-red-500/30 text-red-400',
     amber: 'border-amber-500/30 text-amber-400',
+    violet: 'border-violet-500/30 text-violet-400',
   };
   return (
     <button onClick={onClick} className={`rounded-xl border bg-gray-800 p-4 text-left hover:bg-gray-700/70 ${tones[tone]}`}>
