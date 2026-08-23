@@ -6,6 +6,7 @@ import FactureEncaissementsTab from './components/FactureEncaissementsTab';
 import { getFacture, changeFactureStatus, getEncaissements } from '../../api/factureApi';
 import { FACTURE_STATUS, FACTURE_STATUS_OPTIONS } from '../../utils/financeConstants';
 import DocumentsTab from '../documents/components/DocumentsTab';
+import { useAuth } from '../../auth/AuthContext';
 
 
 function StatusBadge({ statut }) {
@@ -21,6 +22,8 @@ function formatDH(val) {
 export default function FactureDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const canChangeStatus = ['DA', 'DG', 'ADMIN'].includes(user?.role);
     const [facture, setFacture] = useState(null);
     const [encaissements, setEncaissements] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -92,9 +95,11 @@ export default function FactureDetails() {
                             ✏️ Modifier
                         </button>
                     )}
-                    <button onClick={() => setShowStatusModal(true)} className="px-3 py-2 text-sm text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
-                        Changer statut
-                    </button>
+                    {canChangeStatus && (
+                        <button onClick={() => setShowStatusModal(true)} className="px-3 py-2 text-sm text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                            Changer statut
+                        </button>
+                    )}
                     {canEncaisser && activeTab !== 'encaissements' && (
                         <button
                             onClick={() => {

@@ -28,6 +28,9 @@ export const getBankDetails = (id) =>
 // Coordonnées bancaires — UPDATE (DA/DG/ADMIN)
 export const updateBankDetails = (id, data) =>
     axiosClient.patch(`/api/prestataires/${id}/coordonnees-bancaires`, data);
+// Journal des accès bancaires — ADMIN uniquement
+export const getBankAudit = (id) =>
+    axiosClient.get(`/api/prestataires/${id}/coordonnees-bancaires/audit`);
 
 // Lier un formateur
 export const linkFormateur = (id, formateurId) =>

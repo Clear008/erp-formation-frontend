@@ -5,7 +5,7 @@ function formatDH(val) {
     return Number(val).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' DH';
 }
 
-export default function ChequeStepEncaissement({ data, onChange, factures, onSubmit, submitting }) {
+export default function ChequeStepEncaissement({ data, onChange, factures, onSubmit, submitting, canEncaisser }) {
     const set = (field, value) => onChange({ ...data, [field]: value });
 
     const inputClass = "w-full px-3 py-2.5 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none";
@@ -73,7 +73,7 @@ export default function ChequeStepEncaissement({ data, onChange, factures, onSub
             </div>
 
             {/* Date encaissement */}
-            {hasDepot && (
+            {hasDepot && canEncaisser && (
                 <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">
                         Date d'encaissement
@@ -93,6 +93,9 @@ export default function ChequeStepEncaissement({ data, onChange, factures, onSub
                 </div>
             )}
 
+            {hasDepot && !canEncaisser && (
+                <p className="text-xs text-amber-300">Seuls le Directeur Général et l’Administrateur peuvent confirmer l’encaissement effectif.</p>
+            )}
             {/* Action buttons */}
             <div className="flex flex-wrap justify-end gap-3 pt-4 border-t border-gray-700">
                 <button
@@ -115,7 +118,7 @@ export default function ChequeStepEncaissement({ data, onChange, factures, onSub
                     </button>
                 )}
 
-                {hasDepot && data.dateEncaissement && (
+                {hasDepot && canEncaisser && data.dateEncaissement && (
                     <button
                         type="button"
                         disabled={submitting}

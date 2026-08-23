@@ -3,12 +3,19 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../auth/AuthContext';
-import { getPrestataire, changePrestataireStatus, getBankDetails, updateBankDetails, linkFormateur, unlinkFormateur } from '../../api/prestataireApi';
+import { getPrestataire, changePrestataireStatus, getBankDetails, updateBankDetails, getBankAudit, linkFormateur, unlinkFormateur } from '../../api/prestataireApi';
 import { getFormateurs } from '../../api/formateurApi';
 import { PRESTATAIRE_STATUT, PRESTATAIRE_CATEGORIE } from '../../utils/prestataireConstants';
 import DocumentsTab from '../documents/components/DocumentsTab';
 import { compactValue, formatIban, formatRib } from '../../utils/fieldFormatters';
 
+function formatAuditDate(value) {
+    if (!value) return '—';
+    return new Intl.DateTimeFormat('fr-FR', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    }).format(new Date(value));
+}
 function StatusBadge({ statut }) {
     const config = PRESTATAIRE_STATUT[statut] || { label: statut, color: 'bg-gray-700 text-gray-300' };
     return <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>{config.label}</span>;
@@ -43,6 +50,9 @@ export default function PrestataireDetailsPage() {
     const [bankLoading, setBankLoading] = useState(false);
     const [editingBank, setEditingBank] = useState(false);
     const [savingBank, setSavingBank] = useState(false);
+    const [bankAudit, setBankAudit] = useState([]);
+    const [bankAuditLoading, setBankAuditLoading] = useState(false);
+    const [bankAuditLoaded, setBankAuditLoaded] = useState(false);
 
     const [bankForm, setBankForm] = useState({
         rib: '',
@@ -57,6 +67,7 @@ export default function PrestataireDetailsPage() {
     const [linkingFormateur, setLinkingFormateur] = useState(false);
 
     const canAccessBank = ['ADMIN', 'DG', 'DA'].includes(user?.role);
+    const isAdmin = user?.role === 'ADMIN';
     const canBlock = ['ADMIN', 'DG'].includes(user?.role);
 
     const loadData = async () => {
@@ -99,6 +110,21 @@ export default function PrestataireDetailsPage() {
         }
     }, [activeTab, id, canAccessBank, bankDetails]);
 
+    // L'audit ne contient aucune donnée bancaire et reste réservé à l'ADMIN.
+    useEffect(() => {
+        if (activeTab !== 'audit-bancaire' || !isAdmin || bankAuditLoaded) return;
+
+        setBankAuditLoading(true);
+        getBankAudit(id)
+            .then(({ data }) => {
+                setBankAudit(data);
+                setBankAuditLoaded(true);
+            })
+            .catch((err) => {
+                toast.error(err.response?.data?.message || 'Erreur lors du chargement du journal');
+            })
+            .finally(() => setBankAuditLoading(false));
+    }, [activeTab, id, isAdmin, bankAuditLoaded]);
     const loadAvailableFormateurs = async () => {
         try {
             setFormateursLoading(true);
@@ -184,6 +210,7 @@ export default function PrestataireDetailsPage() {
             );
 
             setBankDetails(data);
+            setBankAuditLoaded(false);
             setEditingBank(false);
 
             await loadData();
@@ -222,6 +249,12 @@ export default function PrestataireDetailsPage() {
             }]
             : []),
 
+        ...(isAdmin
+            ? [{
+                key: 'audit-bancaire',
+                label: 'Journal des accès'
+            }]
+            : []),
         ...(prestataire.categorie === 'FORMATION'
             ? [{
                 key: 'formateur',
@@ -501,6 +534,62 @@ export default function PrestataireDetailsPage() {
                 </div>
             )}
 
+            {/* TAB: Journal des accès bancaires — ADMIN uniquement */}
+            {activeTab === 'audit-bancaire' && isAdmin && (
+                <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+                    <div className="p-6 border-b border-gray-700">
+                        <h3 className="text-sm font-semibold text-white">Journal des accès bancaires</h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Traçabilité des consultations et modifications. Aucun RIB ou IBAN n’est conservé ici.
+                        </p>
+                    </div>
+
+                    {bankAuditLoading ? (
+                        <div className="flex justify-center py-12">
+                            <div className="w-7 h-7 border-4 border-gray-700 border-t-indigo-500 rounded-full animate-spin" />
+                        </div>
+                    ) : bankAudit.length === 0 ? (
+                        <div className="text-center py-12 text-sm text-gray-400">
+                            Aucun accès bancaire journalisé pour ce prestataire.
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-gray-900/60 text-xs uppercase tracking-wide text-gray-500">
+                                    <tr>
+                                        <th className="px-6 py-3">Date</th>
+                                        <th className="px-6 py-3">Utilisateur</th>
+                                        <th className="px-6 py-3">Rôle</th>
+                                        <th className="px-6 py-3">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-700">
+                                    {bankAudit.map((entry) => (
+                                        <tr key={entry.id} className="text-sm text-gray-300">
+                                            <td className="px-6 py-4 whitespace-nowrap">{formatAuditDate(entry.createdAt)}</td>
+                                            <td className="px-6 py-4 font-medium text-white">{entry.username}</td>
+                                            <td className="px-6 py-4">
+                                                <span className="inline-flex px-2 py-0.5 rounded-full text-xs bg-indigo-500/10 text-indigo-300">
+                                                    {entry.role}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
+                                                    entry.action === 'MODIFICATION'
+                                                        ? 'bg-amber-500/10 text-amber-300'
+                                                        : 'bg-blue-500/10 text-blue-300'
+                                                }`}>
+                                                    {entry.action === 'MODIFICATION' ? 'Modification' : 'Consultation'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            )}
             {/* TAB: Formateur */}
             {/* ONGLET : FORMATEURS */}
 

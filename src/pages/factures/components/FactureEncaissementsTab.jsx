@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { getEncaissements, createEncaissement, deleteEncaissement, getFactureFinance } from '../../../api/encaissementApi';
 import { CHEQUE_STATUS } from '../../../utils/financeConstants';
 import EncaissementModal from './EncaissementModal';
+import { useAuth } from '../../../auth/AuthContext';
 
 function formatDH(val) {
     if (!val && val !== 0) return '0,00 DH';
@@ -11,6 +12,8 @@ function formatDH(val) {
 }
 
 export default function FactureEncaissementsTab({ facture, onFactureUpdated, autoOpenModal, onModalOpened }) {
+    const { user } = useAuth();
+    const canDeleteEncaissement = ['DA', 'DG', 'ADMIN'].includes(user?.role);
     const [encaissements, setEncaissements] = useState([]);
     const [finance, setFinance] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -196,13 +199,15 @@ export default function FactureEncaissementsTab({ facture, onFactureUpdated, aut
                                     </td>
                                     <td className="px-4 py-3 text-sm text-gray-400 max-w-[150px] truncate">{enc.notes || '—'}</td>
                                     <td className="px-4 py-3 text-right">
-                                        <button
+                                        {canDeleteEncaissement && (
+                                            <button
                                             onClick={() => handleDelete(enc.id)}
                                             className="text-red-400 hover:text-red-300 text-xs transition-colors"
                                             title="Supprimer"
                                         >
                                             🗑️
                                         </button>
+                                        )}
                                     </td>
                                 </tr>
                             );

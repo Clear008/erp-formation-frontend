@@ -36,6 +36,7 @@ export default function PaiementPrestataireDetailsPage() {
     const [showPayModal, setShowPayModal] = useState(false);
 
     const isDA = ['DA', 'DG', 'ADMIN'].includes(user?.role);
+    const canPay = ['DG', 'ADMIN'].includes(user?.role);
 
     const loadData = async () => {
         try {
@@ -119,7 +120,7 @@ export default function PaiementPrestataireDetailsPage() {
                             <button onClick={handleValider} className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700">✅ Valider</button>
                         </>
                     )}
-                    {paiement.statut === 'VALIDE' && isDA && (
+                    {paiement.statut === 'VALIDE' && canPay && (
                         <button onClick={() => setShowPayModal(true)} className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700">💰 Marquer payé</button>
                     )}
                     {!isFinal && isDA && (

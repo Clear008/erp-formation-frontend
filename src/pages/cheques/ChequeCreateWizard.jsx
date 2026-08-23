@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { createChequeWizard, getFacturesForDropdown } from '../../api/chequeWizardApi';
+import { useAuth } from '../../auth/AuthContext';
 
 import ChequeStepReception from './components/ChequeStepReception';
 import ChequeStepDepot from './components/ChequeStepDepot';
@@ -29,6 +30,8 @@ const INITIAL_DATA = {
 
 export default function ChequeCreateWizard() {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const canEncaisserCheque = ['DG', 'ADMIN'].includes(user?.role);
     const [step, setStep] = useState(0);
     const [data, setData] = useState({ ...INITIAL_DATA });
     const [factures, setFactures] = useState([]);
@@ -158,6 +161,7 @@ export default function ChequeCreateWizard() {
                                 factures={factures}
                                 onSubmit={handleSubmit}
                                 submitting={submitting}
+                                canEncaisser={canEncaisserCheque}
                             />
                         )}
 
