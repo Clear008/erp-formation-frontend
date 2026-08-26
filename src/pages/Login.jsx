@@ -127,27 +127,6 @@ export default function Login() {
         </form>
       </div>
 
-      {/* Comptes de test */}
-      <div className="mt-4 card p-4">
-        <p className="text-[10px] font-semibold text-text-muted uppercase tracking-widest mb-2">
-          Comptes de test
-        </p>
-        <div className="space-y-1">
-          {[
-            { u: 'admin', p: 'admin123', r: 'ADMIN' },
-            { u: 'directeur', p: 'dg123', r: 'DG' },
-            { u: 'adjoint', p: 'da123', r: 'DA' },
-            { u: 'assistante', p: 'assistante123', r: 'ASSISTANTE' },
-          ].map(({ u, p, r }) => (
-            <div key={u} className="flex items-center justify-between text-xs">
-              <span className="font-mono text-text-secondary">
-                {u} / {p}
-              </span>
-              <span className="text-text-muted">{r}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }
