@@ -7,7 +7,7 @@ export default function DocumentPreviewModal({ document, onClose, onDownload }) 
     const [blobUrl, setBlobUrl] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
 
     const fileName = document?.nomOriginal || document?.nomFichier || document?.fileName || '';
     const mimeType = document?.mimeType || '';
