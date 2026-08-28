@@ -27,6 +27,11 @@ export const uploadNewVersion = (id, file) => {
 export const downloadDocument = (id) =>
     axiosClient.get(`/api/documents/${id}/download`, { responseType: 'blob' });
 
+export const previewDocument = (id) =>
+    axiosClient.get(`/api/documents/${id}/preview`, {
+        responseType: 'blob',
+    });
+
 // Preview URL (pour iframe / img)
 export const getPreviewUrl = (id) =>
     `${axiosClient.defaults.baseURL}/api/documents/${id}/preview`;

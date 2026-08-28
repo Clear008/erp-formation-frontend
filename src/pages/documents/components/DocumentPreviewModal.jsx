@@ -1,13 +1,11 @@
 // src/pages/documents/components/DocumentPreviewModal.jsx
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../../auth/AuthContext';
+import { previewDocument } from '../../../api/documentApi';
 
 export default function DocumentPreviewModal({ document, onClose, onDownload }) {
-    const { token } = useAuth();
     const [blobUrl, setBlobUrl] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
 
     const fileName = document?.nomOriginal || document?.nomFichier || document?.fileName || '';
     const mimeType = document?.mimeType || '';
@@ -33,18 +31,8 @@ export default function DocumentPreviewModal({ document, onClose, onDownload }) 
             try {
                 setLoading(true);
 
-                const response = await fetch(`${baseUrl}/api/documents/${document.id}/preview`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error('Erreur lors du chargement du fichier');
-                }
-
-                const blob = await response.blob();
-                objectUrl = URL.createObjectURL(blob);
+                const response = await previewDocument(document.id);
+                objectUrl = URL.createObjectURL(response.data);
                 setBlobUrl(objectUrl);
             } catch (error) {
                 console.error(error);
@@ -61,7 +49,7 @@ export default function DocumentPreviewModal({ document, onClose, onDownload }) 
                 URL.revokeObjectURL(objectUrl);
             }
         };
-    }, [document?.id, token, baseUrl, isImage, isPdf]);
+    }, [document?.id, isImage, isPdf]);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
