@@ -9,7 +9,7 @@ import { ACTION_TYPE_OPTIONS } from '../../utils/constants';
 const STEPS = [
     { key: 'qualification', label: '1. Qualification', desc: 'Client et titre de la formation' },
     { key: 'conception',    label: '2. Conception',    desc: 'Description, type et lieu' },
-    { key: 'preparation',   label: '3. Préparation',   desc: 'Dates et montant estimé' },
+    { key: 'preparation',   label: '3. Préparation',   desc: 'Dates et montant total estimé' },
     { key: 'validation',    label: '4. Validation',    desc: 'Vérification et création' },
 ];
 
@@ -173,8 +173,11 @@ export default function ActionCreateWizard() {
                             </div>
                         </div>
                         <div>
-                            <label className={labelClass}>Montant estimé (DH)</label>
+                            <label className={labelClass}>Montant total estimé HT (DH)</label>
                             <input type="number" value={form.montantEstime} onChange={set('montantEstime')} className={inputClass} placeholder="0.00" />
+                            <p className="mt-1.5 text-xs text-gray-400">
+                                Montant prévisionnel total facturé au client pour l’ensemble de l’action, et non le tarif d’une seule journée.
+                            </p>
                         </div>
                     </div>
                 )}
@@ -192,7 +195,7 @@ export default function ActionCreateWizard() {
                                     ['Lieu', form.lieu || '—'],
                                     ['Date début', form.dateDebut || '—'],
                                     ['Date fin', form.dateFin || '—'],
-                                    ['Montant', form.montantEstime ? `${Number(form.montantEstime).toLocaleString('fr-FR')} DH` : '—'],
+                                    ['Montant total estimé HT', form.montantEstime ? `${Number(form.montantEstime).toLocaleString('fr-FR')} DH` : '—'],
                                 ].map(([label, value]) => (
                                     <div key={label}>
                                         <dt className="text-gray-500">{label}</dt>
