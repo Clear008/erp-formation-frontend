@@ -16,9 +16,9 @@ export default function FactureStepLines({ data, onChange, selectedAction }) {
         if (selectedAction && lignes.length === 0) {
             const autoLine = {
                 description: `Formation : ${selectedAction.titre} (${selectedAction.reference})`,
-                quantite: selectedAction.nbSessionsRealisees || 1,
-                prixUnitaire: selectedAction.montantCalcule && selectedAction.nbSessionsRealisees
-                    ? (Number(selectedAction.montantCalcule) / selectedAction.nbSessionsRealisees).toFixed(2)
+                quantite: 1,
+                prixUnitaire: selectedAction.montantEstime != null
+                    ? Number(selectedAction.montantEstime).toFixed(2)
                     : '',
                 tauxTva: 20,
             };
