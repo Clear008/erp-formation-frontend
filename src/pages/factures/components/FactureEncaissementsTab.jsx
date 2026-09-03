@@ -76,12 +76,12 @@ export default function FactureEncaissementsTab({ facture, onFactureUpdated, aut
         );
     }
 
-    const isPaid = finance?.statut === 'PAYEE';
-    const isDraft = finance?.statut === 'BROUILLON';
-    const canEncaisser = !isPaid && !isDraft;
     const resteAPayer = Number(finance?.resteAPayer || 0);
     const montantTtc = Number(finance?.montantTtc || 0);
     const totalEncaisse = Number(finance?.totalEncaisse || 0);
+    const isPaid = finance?.statut === 'PAYEE' || (montantTtc > 0 && resteAPayer <= 0);
+    const isDraft = finance?.statut === 'BROUILLON';
+    const canEncaisser = !isPaid && !isDraft && resteAPayer > 0;
     const progressPercent = montantTtc > 0
         ? Math.min(100, Math.round((totalEncaisse / montantTtc) * 100))
         : 0;

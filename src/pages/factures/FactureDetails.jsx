@@ -76,7 +76,8 @@ export default function FactureDetails() {
         { key: 'documents', label: 'Documents' },
     ];
 
-    const isPaid = facture.statut === 'PAYEE';
+    const resteAPayer = Number(facture.resteAPayer || 0);
+    const isPaid = facture.statut === 'PAYEE' || resteAPayer <= 0;
     const canEncaisser = !isPaid && facture.statut !== 'BROUILLON';
     const manualStatusOptions = MANUAL_STATUS_TRANSITIONS[facture.statut] || [];
     const canChangeStatus = hasStatusPermission && manualStatusOptions.length > 0;
