@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import FactureEncaissementsTab from './components/FactureEncaissementsTab';
 import { getFacture, changeFactureStatus, getEncaissements } from '../../api/factureApi';
-import { FACTURE_STATUS, FACTURE_STATUS_OPTIONS } from '../../utils/financeConstants';
+import { FACTURE_STATUS } from '../../utils/financeConstants';
 import DocumentsTab from '../documents/components/DocumentsTab';
 import { useAuth } from '../../auth/AuthContext';
 
@@ -19,11 +19,16 @@ function formatDH(val) {
     return Number(val).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' DH';
 }
 
+const MANUAL_STATUS_TRANSITIONS = {
+    BROUILLON: [{ value: 'EMISE', label: 'Émise' }],
+    EMISE: [{ value: 'ENVOYEE', label: 'Envoyée' }],
+};
+
 export default function FactureDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
-    const canChangeStatus = ['DA', 'DG', 'ADMIN'].includes(user?.role);
+    const hasStatusPermission = ['DA', 'DG', 'ADMIN'].includes(user?.role);
     const [facture, setFacture] = useState(null);
     const [encaissements, setEncaissements] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -73,6 +78,8 @@ export default function FactureDetails() {
 
     const isPaid = facture.statut === 'PAYEE';
     const canEncaisser = !isPaid && facture.statut !== 'BROUILLON';
+    const manualStatusOptions = MANUAL_STATUS_TRANSITIONS[facture.statut] || [];
+    const canChangeStatus = hasStatusPermission && manualStatusOptions.length > 0;
 
     return (
         <div>
@@ -197,6 +204,7 @@ export default function FactureDetails() {
             {showStatusModal && (
                 <StatusModal
                     current={facture.statut}
+                    options={manualStatusOptions}
                     onSubmit={handleChangeStatus}
                     onClose={() => setShowStatusModal(false)}
                 />
@@ -208,9 +216,8 @@ export default function FactureDetails() {
 
 // ==================== STATUS MODAL ====================
 
-function StatusModal({ current, onSubmit, onClose }) {
+function StatusModal({ current, options, onSubmit, onClose }) {
     const [selected, setSelected] = useState('');
-    const options = FACTURE_STATUS_OPTIONS.filter((o) => o.value && o.value !== current);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
